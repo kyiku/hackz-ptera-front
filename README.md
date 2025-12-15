@@ -1,13 +1,18 @@
-# Vite + React + TypeScript + Tailwind CSS
+# Hackz-Ptera Frontend
 
-このプロジェクトはVite、React、TypeScript、Tailwind CSSを使用したフロントエンド開発環境です。
+「意図的に不便なUX」をコンセプトにしたハッカソンプロジェクトのフロントエンドです。
+
+> **Note:** UXは意図的に悪くしていますが、コード品質はプロダクショングレード（クリーン、型付き、メンテナブル）を維持しています。
 
 ## 技術スタック
 
 - **Vite** - 高速なビルドツール
-- **React** - UIライブラリ
+- **React 19** - UIライブラリ
 - **TypeScript** - 型付きJavaScript
 - **Tailwind CSS v4** - ユーティリティファーストCSSフレームワーク
+- **React Router** - ルーティング
+- **Vitest** - テストフレームワーク
+- **React Testing Library** - コンポーネントテスト
 
 ---
 
@@ -118,6 +123,15 @@ npm run preview
 
 # ESLintでコードチェック
 npm run lint
+
+# テストをウォッチモードで実行
+npm run test
+
+# テストを一度だけ実行
+npm run test:run
+
+# カバレッジ付きでテストを実行
+npm run test:coverage
 ```
 
 ---
@@ -126,16 +140,30 @@ npm run lint
 
 ```
 front/
-├── public/           # 静的ファイル
+├── public/              # 静的ファイル
 ├── src/
-│   ├── assets/       # 画像などのアセット
-│   ├── App.tsx       # メインコンポーネント
-│   ├── main.tsx      # エントリーポイント
-│   └── index.css     # Tailwind CSSのインポート
-├── index.html        # HTMLテンプレート
-├── vite.config.ts    # Vite設定
-├── tsconfig.json     # TypeScript設定
-└── package.json      # プロジェクト設定
+│   ├── api/             # APIクライアント
+│   ├── components/      # UIコンポーネント
+│   │   ├── captcha/     # CAPTCHAコンポーネント
+│   │   ├── common/      # 共通コンポーネント
+│   │   ├── dino/        # Dino Runゲームコンポーネント
+│   │   ├── otp/         # OTPコンポーネント
+│   │   ├── queue/       # 待機列コンポーネント
+│   │   ├── register/    # 登録フォームコンポーネント
+│   │   └── ui/          # 汎用UIコンポーネント
+│   ├── hooks/           # カスタムフック
+│   ├── pages/           # ページコンポーネント
+│   ├── router/          # ルーティング設定
+│   ├── store/           # 状態管理
+│   ├── test/            # テストセットアップ
+│   ├── App.tsx          # メインコンポーネント
+│   ├── main.tsx         # エントリーポイント
+│   └── index.css        # Tailwind CSSのインポート
+├── AGENT.md             # 開発ワークフロー
+├── index.html           # HTMLテンプレート
+├── vite.config.ts       # Vite設定
+├── tsconfig.json        # TypeScript設定
+└── package.json         # プロジェクト設定
 ```
 
 ---
@@ -197,3 +225,24 @@ PowerShellを管理者として開き、以下を実行：
 ```powershell
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```
+
+---
+
+## 開発ワークフロー
+
+このプロジェクトはissueベースの開発フローを採用しています。詳細は [AGENT.md](./AGENT.md) を参照してください。
+
+### 基本フロー
+
+1. **Issue確認** - GitHubのissueを確認し、対応するタスクを選択
+2. **ブランチ作成** - `feat/issue-{番号}-feature-name` 形式でブランチを作成
+3. **実装** - issueに記載されているテストファイルを参照しながら実装
+4. **テスト実行** - `npm run test:run` でテストがすべてpassすることを確認
+5. **PR作成** - テストがpassしたらPull Requestを作成
+
+### 完了条件
+
+- [ ] Lintエラーがないこと (`npm run lint`)
+- [ ] 型エラーがないこと (`npm run build`)
+- [ ] テストがすべてpassすること (`npm run test:run`)
+- [ ] PRがレビューされApproveされること
