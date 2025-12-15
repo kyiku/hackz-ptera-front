@@ -1,11 +1,14 @@
+必ず日本語で返答すること。
+
 # 1. Project Context & Objective
 * **Goal:** Build a frontend for a web application based on the "Hackathon Materials" with the core concept of an **"Intentionally Inconvenient UX."**
 * **Role:** Act as a Senior Frontend Developer.
 * **Quality Standard:** While the *UX* is intentionally bad, the *Code Quality* must be production-grade (clean, typed, maintainable).
+* **Implementation Requirements:** See `../back/spec.md` Section 6 "クライアント(Front)への実装要求"
 
 # 2. Technology Stack
 * **Language:** TypeScript
-* **Framework:** Next.js
+* **Framework:** React (Vite)
 * **Styling:** Tailwind CSS
 
 ---
@@ -15,9 +18,10 @@
 Follow this cycle for every single task. Do not skip steps.
 
 ### Phase 1: Task Initiation & Branching
-1.  **Select Task:** Pick a specific feature from the "Implementation Feature List."
+1.  **Select Task:** GitHubのissueを参照し、対応するタスクを選択する。
+    * issueには対応するテストファイルが記載されている。
 2.  **Create Branch:** Create a new feature branch from `main` (or `develop`).
-    * *Naming Convention:* `feat/feature-name` or `fix/issue-name`
+    * *Naming Convention:* `feat/issue-{番号}-feature-name` or `fix/issue-{番号}-issue-name`
 
 ### Phase 2: Component Implementation
 1.  **Isolation:** Implement the feature as an independent, reusable component.
@@ -28,6 +32,9 @@ Follow this cycle for every single task. Do not skip steps.
 Before pushing code, run the following checks:
 * [ ] **Linting:** Ensure no linter errors.
 * [ ] **Type Check:** Run `tsc` to verify no type errors.
+* [ ] **Testing:** Run `npm run test:run` to verify all tests pass.
+    * **重要:** テストケースを通せない場合は実装が完了したと判定しないこと。
+    * issueに記載されているテストファイルのテストがすべてpassすること。
 * [ ] **Clean Code:** Remove `console.log` and commented-out code.
 
 ### Phase 4: Git Operations
@@ -37,12 +44,14 @@ Before pushing code, run the following checks:
 2.  **Push:** Push the branch to the remote repository.
 
 ### Phase 5: Pull Request & Review Process
-1.  **Create PR:** Open a Pull Request on GitHub targeting the main branch.
+1.  **Create PR:** テストケースがすべてpassしたら、Pull Requestを作成する。
+    * **前提条件:** Phase 3のすべてのチェックが完了していること。
     * **Title:** Clear summary of the feature.
     * **Description:**
         * What was implemented?
         * How does it degrade UX (as per requirements)?
         * Points to review.
+        * 対応issue番号（例: `Closes #1`）
 2.  **Await Review:** Stop development on this task until feedback is received.
 3.  **Address Feedback:**
     * If changes are requested, implement them immediately.
