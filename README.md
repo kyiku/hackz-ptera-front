@@ -228,6 +228,94 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 ---
 
+## CI/CD
+
+### ブランチ戦略
+
+| ブランチ | 環境 | 動作 |
+|---------|------|------|
+| `main` | 本番 | S3 + CloudFront に自動デプロイ |
+| `develop` | 開発 | CI (テスト・Lint・ビルド) のみ |
+| `feat/*` | 機能開発 | developから作成 |
+| `fix/*` | バグ修正 | developから作成 |
+
+#### ブランチ運用ルール
+
+```
+main (本番環境)
+  ↑ マージ (PR必須)
+develop (開発・統合)
+  ↑ マージ (PR必須)
+feat/xxx または fix/xxx (作業ブランチ)
+```
+
+1. **機能開発時**: `develop` から `feat/機能名` ブランチを作成
+2. **バグ修正時**: `develop` から `fix/バグ名` ブランチを作成
+3. **作業完了後**: `develop` へPRを作成してマージ
+4. **リリース時**: `develop` から `main` へPRを作成してマージ → 自動デプロイ
+
+#### コマンド例
+
+```bash
+# 新機能開発を始める
+git checkout develop
+git pull origin develop
+git checkout -b feat/add-new-component
+
+# 作業完了後
+git add .
+git commit -m "feat: 新しいコンポーネントを追加"
+git push -u origin feat/add-new-component
+# → GitHub でPRを作成
+
+# developへマージ後、本番リリース
+git checkout develop
+git pull origin develop
+git checkout main
+git pull origin main
+git merge develop
+git push origin main
+# → 自動でS3にデプロイ + CloudFrontキャッシュ無効化
+```
+
+### GitHub Actions
+
+- **CI** (`ci.yml`): push/PR時にテスト・Lint・型チェック・ビルド確認
+- **CD** (`deploy.yml`): mainブランチへのpush時にS3へデプロイ + CloudFrontキャッシュ無効化
+
+### 本番環境
+
+| リソース | 値 |
+|---------|-----|
+| **本番URL** | `https://d3qfj76e9d3p81.cloudfront.net` |
+| **API URL** | `https://d3qfj76e9d3p81.cloudfront.net/api` |
+| **WebSocket URL** | `wss://d3qfj76e9d3p81.cloudfront.net/ws` |
+| **S3 Bucket** | `hackz-ptera-frontend-202606334122` |
+| **CloudFront ID** | `ESIJNHR2MKSQD` |
+
+### GitHub Secrets (設定済み)
+
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY`
+- `S3_BUCKET`
+- `CLOUDFRONT_DISTRIBUTION_ID`
+- `VITE_API_URL`
+- `VITE_WS_URL`
+
+### ローカル開発 (docker-compose)
+
+プロジェクトルートで以下を実行：
+
+```bash
+cd /path/to/hackz-ptera
+docker-compose up
+```
+
+- フロントエンド: http://localhost:5173
+- バックエンド: http://localhost:8080
+
+---
+
 ## 開発ワークフロー
 
 このプロジェクトはissueベースの開発フローを採用しています。詳細は [AGENT.md](./AGENT.md) を参照してください。
