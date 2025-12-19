@@ -5,24 +5,40 @@
  * WebSocket接続状態と待機順位を表示するページ
  */
 import { useState, useEffect } from 'react'
+import { QueuePosition } from '../components/queue/QueuePosition'
 
 type ConnectionStatus = 'connecting' | 'connected' | 'error'
 
 export function QueuePage() {
   const [status, setStatus] = useState<ConnectionStatus>('connecting')
-  const [queuePosition, setQueuePosition] = useState<number | null>(null)
+  const [queuePosition, setQueuePosition] = useState<number>(10)
+  const [totalWaiting, setTotalWaiting] = useState<number>(50)
   const [message, setMessage] = useState<string>('')
 
   // シミュレーション: 接続後に待機順位を表示
   useEffect(() => {
     const timer = setTimeout(() => {
       setStatus('connected')
-      setQueuePosition(42)
       setMessage('順番が来るまでお待ちください')
     }, 2000)
 
     return () => clearTimeout(timer)
   }, [])
+
+  // シミュレーション: 順位が徐々に減少（アニメーションデモ用）
+  useEffect(() => {
+    if (status !== 'connected') return
+
+    const interval = setInterval(() => {
+      setQueuePosition(prev => {
+        if (prev <= 1) return 1
+        return prev - 1
+      })
+      setTotalWaiting(prev => Math.max(prev - 1, 10))
+    }, 3000)
+
+    return () => clearInterval(interval)
+  }, [status])
 
   return (
     <div
@@ -48,16 +64,13 @@ export function QueuePage() {
           </div>
         )}
 
-        {/* 待機順位表示エリア */}
-        {status === 'connected' && queuePosition !== null && (
+        {/* 待機順位表示エリア - QueuePositionコンポーネント使用 */}
+        {status === 'connected' && (
           <div className="space-y-6">
-            <div className="space-y-2">
-              <p className="text-gray-400 text-sm">あなたの順番</p>
-              <div className="text-7xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-fuchsia-400">
-                {queuePosition}
-              </div>
-              <p className="text-gray-400 text-sm">番目</p>
-            </div>
+            <QueuePosition
+              position={queuePosition}
+              totalWaiting={totalWaiting}
+            />
 
             {/* 推定待機時間 */}
             <div className="bg-gray-700/50 rounded-lg p-4">
@@ -94,9 +107,10 @@ export function QueuePage() {
             <button
               onClick={() => {
                 setStatus('connecting')
+                setQueuePosition(10)
+                setTotalWaiting(50)
                 setTimeout(() => {
                   setStatus('connected')
-                  setQueuePosition(42)
                   setMessage('順番が来るまでお待ちください')
                 }, 2000)
               }}
