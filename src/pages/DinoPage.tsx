@@ -6,32 +6,59 @@
  */
 import { useRef, useEffect, useState, useCallback } from 'react'
 import { Dinosaur, GROUND_Y } from '../components/dino/Dinosaur'
+import { ObstacleManager } from '../components/dino/Obstacle'
 
 type GameState = 'ready' | 'playing' | 'gameover'
 
 const CANVAS_WIDTH = 800
 const CANVAS_HEIGHT = 300
 
+/**
+ * 当たり判定チェック（AABB衝突）
+ */
+function checkCollision(
+    a: { x: number; y: number; width: number; height: number },
+    b: { x: number; y: number; width: number; height: number }
+): boolean {
+    return (
+        a.x < b.x + b.width &&
+        a.x + a.width > b.x &&
+        a.y < b.y + b.height &&
+        a.y + a.height > b.y
+    )
+}
+
 export function DinoPage() {
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const dinoRef = useRef<Dinosaur | null>(null)
+    const obstacleManagerRef = useRef<ObstacleManager | null>(null)
     const animationFrameRef = useRef<number>(0)
+    const scoreRef = useRef<number>(0)
 
     const [gameState, setGameState] = useState<GameState>('ready')
     const [score, setScore] = useState(0)
     const [timer, setTimer] = useState(0)
     const [highScore, setHighScore] = useState(0)
 
-    // 恐竜インスタンス初期化
+    // 恐竜・障害物マネージャー初期化
     useEffect(() => {
         dinoRef.current = new Dinosaur(80)
+        obstacleManagerRef.current = new ObstacleManager(CANVAS_WIDTH)
+    }, [])
+
+    // ゲームオーバー処理
+    const handleGameOver = useCallback(() => {
+        cancelAnimationFrame(animationFrameRef.current)
+        setGameState('gameover')
+        setHighScore(prev => Math.max(prev, scoreRef.current))
     }, [])
 
     // ゲームループ
     const gameLoop = useCallback(() => {
         const canvas = canvasRef.current
         const dino = dinoRef.current
-        if (!canvas || !dino) return
+        const obstacleManager = obstacleManagerRef.current
+        if (!canvas || !dino || !obstacleManager) return
 
         const ctx = canvas.getContext('2d')
         if (!ctx) return
@@ -56,36 +83,52 @@ export function DinoPage() {
         dino.update()
         dino.draw(ctx)
 
+        // 障害物を更新・描画
+        obstacleManager.update(scoreRef.current)
+        obstacleManager.draw(ctx)
+
+        // 当たり判定
+        const dinoHitbox = dino.getHitbox()
+        for (const obstacle of obstacleManager.obstacles) {
+            const obstacleHitbox = obstacle.getHitbox()
+            if (checkCollision(dinoHitbox, obstacleHitbox)) {
+                handleGameOver()
+                return
+            }
+        }
+
         // スコア更新（毎フレーム）
-        setScore(prev => prev + 1)
+        scoreRef.current += 1
+        setScore(scoreRef.current)
 
         // ゲームループ継続
         animationFrameRef.current = requestAnimationFrame(gameLoop)
-    }, [])
+    }, [handleGameOver])
 
     // ゲーム開始
     const startGame = useCallback(() => {
         if (dinoRef.current) {
             dinoRef.current.reset()
         }
+        if (obstacleManagerRef.current) {
+            obstacleManagerRef.current.reset()
+        }
+        scoreRef.current = 0
         setGameState('playing')
         setScore(0)
         setTimer(0)
         animationFrameRef.current = requestAnimationFrame(gameLoop)
     }, [gameLoop])
 
-    // ゲームオーバー
-    const endGame = useCallback(() => {
-        cancelAnimationFrame(animationFrameRef.current)
-        setGameState('gameover')
-        setHighScore(prev => Math.max(prev, score))
-    }, [score])
-
     // リトライ
     const retry = useCallback(() => {
         if (dinoRef.current) {
             dinoRef.current.reset()
         }
+        if (obstacleManagerRef.current) {
+            obstacleManagerRef.current.reset()
+        }
+        scoreRef.current = 0
         setGameState('ready')
         setScore(0)
         setTimer(0)
@@ -267,19 +310,10 @@ export function DinoPage() {
                     タップでジャンプ
                 </button>
             )}
-
-            {/* デモ用：ゲームオーバーボタン */}
-            {gameState === 'playing' && (
-                <button
-                    onClick={endGame}
-                    className="mt-4 px-4 py-2 bg-red-600/50 hover:bg-red-600 text-white rounded transition-colors text-sm"
-                >
-                    ゲームオーバー（デモ）
-                </button>
-            )}
         </div>
     )
 }
+
 
 
 export default DinoPage
