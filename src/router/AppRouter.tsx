@@ -39,6 +39,7 @@ export const AppRoutes = () => {
         <Routes>
             {/* 公開ルート */}
             <Route path="/" element={<QueuePage />} />
+            <Route path="/queue" element={<QueuePage />} />
             <Route path="/dino" element={<DinoPage />} />
             <Route path="/captcha" element={<CaptchaPage />} />
 
