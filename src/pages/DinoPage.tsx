@@ -4,19 +4,24 @@
  *
  * Canvas要素を使用したゲームエリアとスコア・タイマー表示
  * タイムアウト: 3分（180秒）
+ * ゲーム終了時にAPI送信
  */
 import { useRef, useEffect, useState, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Dinosaur, GROUND_Y } from '../components/dino/Dinosaur'
 import { ObstacleManager } from '../components/dino/Obstacle'
 import { checkCollision } from '../components/dino/CollisionDetector'
 import { ScoreDisplay, TARGET_SCORE, isTimeout, isTargetAchieved } from '../components/dino/ScoreDisplay'
+import { submitGameResultMock } from '../api/dinoApi'
+import type { GameResultResponse } from '../api/dinoApi'
 
-type GameState = 'ready' | 'playing' | 'gameover' | 'success'
+type GameState = 'ready' | 'playing' | 'gameover' | 'success' | 'submitting'
 
 const CANVAS_WIDTH = 800
 const CANVAS_HEIGHT = 300
 
 export function DinoPage() {
+    const navigate = useNavigate()
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const dinoRef = useRef<Dinosaur | null>(null)
     const obstacleManagerRef = useRef<ObstacleManager | null>(null)
@@ -31,16 +36,68 @@ export function DinoPage() {
     const [isNewHighScore, setIsNewHighScore] = useState(false)
     const [isTimeoutFail, setIsTimeoutFail] = useState(false)
 
+    // API関連状態
+    const [apiMessage, setApiMessage] = useState<string>('')
+    const [redirectCountdown, setRedirectCountdown] = useState<number | null>(null)
+    const [apiError, setApiError] = useState<string | null>(null)
+
     // 恐竜・障害物マネージャー初期化
     useEffect(() => {
         dinoRef.current = new Dinosaur(80)
         obstacleManagerRef.current = new ObstacleManager(CANVAS_WIDTH)
     }, [])
 
+    // API結果送信
+    const submitResult = useCallback(async (survived: boolean) => {
+        setGameState('submitting')
+        setApiError(null)
+
+        try {
+            const response: GameResultResponse = await submitGameResultMock({
+                score: scoreRef.current,
+                survived,
+            })
+
+            setApiMessage(response.message)
+
+            if (!response.error) {
+                // 成功: 次ステージへ遷移
+                setGameState('success')
+                setTimeout(() => {
+                    navigate(`/${response.next_stage}`)
+                }, 2000)
+            } else {
+                // 失敗: リダイレクトカウントダウン開始
+                setGameState('gameover')
+                setRedirectCountdown(response.redirect_delay)
+            }
+        } catch (error) {
+            setApiError(error instanceof Error ? error.message : 'API送信に失敗しました')
+            setGameState('gameover')
+        }
+    }, [navigate])
+
+    // リダイレクトカウントダウン
+    useEffect(() => {
+        if (redirectCountdown === null || redirectCountdown <= 0) return
+
+        const timer = setTimeout(() => {
+            setRedirectCountdown(prev => (prev !== null ? prev - 1 : null))
+        }, 1000)
+
+        return () => clearTimeout(timer)
+    }, [redirectCountdown])
+
+    // カウントダウン終了時にリトライ画面を表示
+    useEffect(() => {
+        if (redirectCountdown === 0) {
+            setRedirectCountdown(null)
+        }
+    }, [redirectCountdown])
+
     // ゲーム成功処理
     const handleSuccess = useCallback(() => {
         cancelAnimationFrame(animationFrameRef.current)
-        setGameState('success')
 
         const currentScore = scoreRef.current
         if (currentScore > highScore) {
@@ -49,12 +106,14 @@ export function DinoPage() {
         } else {
             setIsNewHighScore(false)
         }
-    }, [highScore])
+
+        // API送信
+        submitResult(true)
+    }, [highScore, submitResult])
 
     // ゲームオーバー処理
     const handleGameOver = useCallback((timeout: boolean = false) => {
         cancelAnimationFrame(animationFrameRef.current)
-        setGameState('gameover')
         setIsTimeoutFail(timeout)
 
         const currentScore = scoreRef.current
@@ -64,7 +123,10 @@ export function DinoPage() {
         } else {
             setIsNewHighScore(false)
         }
-    }, [highScore])
+
+        // API送信
+        submitResult(false)
+    }, [highScore, submitResult])
 
     // ゲームループ
     const gameLoop = useCallback(() => {
@@ -138,6 +200,9 @@ export function DinoPage() {
         setScore(0)
         setTimer(0)
         setIsTimeoutFail(false)
+        setApiMessage('')
+        setApiError(null)
+        setRedirectCountdown(null)
         animationFrameRef.current = requestAnimationFrame(gameLoop)
     }, [gameLoop])
 
@@ -155,6 +220,9 @@ export function DinoPage() {
         setScore(0)
         setTimer(0)
         setIsTimeoutFail(false)
+        setApiMessage('')
+        setApiError(null)
+        setRedirectCountdown(null)
     }, [])
 
     // ジャンプ処理
@@ -234,7 +302,7 @@ export function DinoPage() {
                     startGame()
                 } else if (gameState === 'playing') {
                     handleJump()
-                } else if (gameState === 'gameover' || gameState === 'success') {
+                } else if ((gameState === 'gameover' || gameState === 'success') && redirectCountdown === null) {
                     retry()
                 }
             }
@@ -242,7 +310,7 @@ export function DinoPage() {
 
         window.addEventListener('keydown', handleKeyDown)
         return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [gameState, startGame, retry, handleJump])
+    }, [gameState, startGame, retry, handleJump, redirectCountdown])
 
     return (
         <div
@@ -261,7 +329,7 @@ export function DinoPage() {
                 highScore={highScore}
                 targetScore={TARGET_SCORE}
                 showTargetScore={gameState === 'playing'}
-                isGameOver={gameState === 'gameover' || gameState === 'success'}
+                isGameOver={gameState === 'gameover' || gameState === 'success' || gameState === 'submitting'}
             />
 
             {/* ゲームエリア（Canvas） */}
@@ -295,6 +363,16 @@ export function DinoPage() {
                     </div>
                 )}
 
+                {/* 送信中オーバーレイ */}
+                {gameState === 'submitting' && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70">
+                        <div className="w-12 h-12 border-4 border-blue-400 border-t-transparent rounded-full animate-spin mb-4"></div>
+                        <p className="text-white text-xl">
+                            結果を送信中...
+                        </p>
+                    </div>
+                )}
+
                 {/* ゲームオーバー画面オーバーレイ */}
                 {gameState === 'gameover' && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70">
@@ -309,14 +387,28 @@ export function DinoPage() {
                                 🎉 NEW HIGH SCORE!
                             </p>
                         )}
-                        {isTimeoutFail && (
-                            <p className="text-gray-400 text-sm mb-4">
-                                3分以内にクリアできませんでした
+                        {apiMessage && (
+                            <p className="text-gray-300 text-sm mb-2">
+                                {apiMessage}
+                            </p>
+                        )}
+                        {apiError && (
+                            <p className="text-red-300 text-sm mb-2">
+                                ⚠️ {apiError}
+                            </p>
+                        )}
+                        {redirectCountdown !== null && redirectCountdown > 0 && (
+                            <p className="text-yellow-400 text-sm mb-4">
+                                {redirectCountdown}秒後にリトライ可能...
                             </p>
                         )}
                         <button
                             onClick={retry}
-                            className="px-8 py-3 bg-violet-600 hover:bg-violet-700 text-white font-bold rounded-lg transition-colors text-lg"
+                            disabled={redirectCountdown !== null && redirectCountdown > 0}
+                            className={`px-8 py-3 text-white font-bold rounded-lg transition-colors text-lg ${redirectCountdown !== null && redirectCountdown > 0
+                                ? 'bg-gray-600 cursor-not-allowed'
+                                : 'bg-violet-600 hover:bg-violet-700'
+                                }`}
                         >
                             リトライ
                         </button>
@@ -340,12 +432,14 @@ export function DinoPage() {
                                 🏆 NEW HIGH SCORE!
                             </p>
                         )}
-                        <button
-                            onClick={retry}
-                            className="px-8 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-colors text-lg"
-                        >
-                            もう一度プレイ
-                        </button>
+                        {apiMessage && (
+                            <p className="text-green-300 text-sm mb-4">
+                                {apiMessage}
+                            </p>
+                        )}
+                        <p className="text-gray-400 text-sm">
+                            次のステージへ移動中...
+                        </p>
                     </div>
                 )}
             </div>
@@ -375,8 +469,5 @@ export function DinoPage() {
         </div>
     )
 }
-
-
-
 
 export default DinoPage
