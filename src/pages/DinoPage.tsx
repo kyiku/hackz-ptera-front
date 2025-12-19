@@ -5,44 +5,97 @@
  * Canvas要素を使用したゲームエリアとスコア・タイマー表示
  */
 import { useRef, useEffect, useState, useCallback } from 'react'
+import { Dinosaur, GROUND_Y } from '../components/dino/Dinosaur'
 
 type GameState = 'ready' | 'playing' | 'gameover'
 
+const CANVAS_WIDTH = 800
+const CANVAS_HEIGHT = 300
+
 export function DinoPage() {
     const canvasRef = useRef<HTMLCanvasElement>(null)
+    const dinoRef = useRef<Dinosaur | null>(null)
+    const animationFrameRef = useRef<number>(0)
+
     const [gameState, setGameState] = useState<GameState>('ready')
     const [score, setScore] = useState(0)
     const [timer, setTimer] = useState(0)
     const [highScore, setHighScore] = useState(0)
 
-    // Canvas初期化
+    // 恐竜インスタンス初期化
     useEffect(() => {
+        dinoRef.current = new Dinosaur(80)
+    }, [])
+
+    // ゲームループ
+    const gameLoop = useCallback(() => {
         const canvas = canvasRef.current
-        if (!canvas) return
+        const dino = dinoRef.current
+        if (!canvas || !dino) return
 
         const ctx = canvas.getContext('2d')
         if (!ctx) return
 
-        // Canvas背景を描画
+        // 背景クリア
         ctx.fillStyle = '#1f2937'
-        ctx.fillRect(0, 0, canvas.width, canvas.height)
+        ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
 
         // 地面を描画
         ctx.fillStyle = '#374151'
-        ctx.fillRect(0, canvas.height - 40, canvas.width, 40)
+        ctx.fillRect(0, GROUND_Y, CANVAS_WIDTH, CANVAS_HEIGHT - GROUND_Y)
 
-        // ゲーム待機中のテキスト
-        if (gameState === 'ready') {
-            ctx.fillStyle = '#9ca3af'
-            ctx.font = '24px sans-serif'
-            ctx.textAlign = 'center'
-            ctx.fillText('スペースキーでスタート', canvas.width / 2, canvas.height / 2)
+        // 地面のライン
+        ctx.strokeStyle = '#4b5563'
+        ctx.lineWidth = 2
+        ctx.beginPath()
+        ctx.moveTo(0, GROUND_Y)
+        ctx.lineTo(CANVAS_WIDTH, GROUND_Y)
+        ctx.stroke()
+
+        // 恐竜を更新・描画
+        dino.update()
+        dino.draw(ctx)
+
+        // スコア更新（毎フレーム）
+        setScore(prev => prev + 1)
+
+        // ゲームループ継続
+        animationFrameRef.current = requestAnimationFrame(gameLoop)
+    }, [])
+
+    // ゲーム開始
+    const startGame = useCallback(() => {
+        if (dinoRef.current) {
+            dinoRef.current.reset()
         }
+        setGameState('playing')
+        setScore(0)
+        setTimer(0)
+        animationFrameRef.current = requestAnimationFrame(gameLoop)
+    }, [gameLoop])
 
-        // 恐竜を描画（簡易版）
-        ctx.fillStyle = '#10b981'
-        ctx.fillRect(80, canvas.height - 80, 40, 40)
+    // ゲームオーバー
+    const endGame = useCallback(() => {
+        cancelAnimationFrame(animationFrameRef.current)
+        setGameState('gameover')
+        setHighScore(prev => Math.max(prev, score))
+    }, [score])
 
+    // リトライ
+    const retry = useCallback(() => {
+        if (dinoRef.current) {
+            dinoRef.current.reset()
+        }
+        setGameState('ready')
+        setScore(0)
+        setTimer(0)
+    }, [])
+
+    // ジャンプ処理
+    const handleJump = useCallback(() => {
+        if (gameState === 'playing' && dinoRef.current) {
+            dinoRef.current.jump()
+        }
     }, [gameState])
 
     // タイマー更新
@@ -51,32 +104,53 @@ export function DinoPage() {
 
         const interval = setInterval(() => {
             setTimer(prev => prev + 1)
-            setScore(prev => prev + 10)
         }, 1000)
 
         return () => clearInterval(interval)
     }, [gameState])
 
-    // ゲーム開始
-    const startGame = useCallback(() => {
-        setGameState('playing')
-        setScore(0)
-        setTimer(0)
-    }, [])
+    // 初期描画
+    useEffect(() => {
+        const canvas = canvasRef.current
+        const dino = dinoRef.current
+        if (!canvas || !dino) return
 
-    // ゲームオーバー（デモ用）
-    const endGame = useCallback(() => {
-        setGameState('gameover')
-        if (score > highScore) {
-            setHighScore(score)
+        const ctx = canvas.getContext('2d')
+        if (!ctx) return
+
+        // 背景
+        ctx.fillStyle = '#1f2937'
+        ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
+
+        // 地面
+        ctx.fillStyle = '#374151'
+        ctx.fillRect(0, GROUND_Y, CANVAS_WIDTH, CANVAS_HEIGHT - GROUND_Y)
+
+        // 地面のライン
+        ctx.strokeStyle = '#4b5563'
+        ctx.lineWidth = 2
+        ctx.beginPath()
+        ctx.moveTo(0, GROUND_Y)
+        ctx.lineTo(CANVAS_WIDTH, GROUND_Y)
+        ctx.stroke()
+
+        // 恐竜を描画
+        dino.draw(ctx)
+
+        // スタート画面テキスト
+        if (gameState === 'ready') {
+            ctx.fillStyle = '#9ca3af'
+            ctx.font = '24px sans-serif'
+            ctx.textAlign = 'center'
+            ctx.fillText('スペースキーでスタート', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2)
         }
-    }, [score, highScore])
+    }, [gameState])
 
-    // リトライ
-    const retry = useCallback(() => {
-        setGameState('ready')
-        setScore(0)
-        setTimer(0)
+    // クリーンアップ
+    useEffect(() => {
+        return () => {
+            cancelAnimationFrame(animationFrameRef.current)
+        }
     }, [])
 
     // キーボードイベント
@@ -86,6 +160,8 @@ export function DinoPage() {
                 e.preventDefault()
                 if (gameState === 'ready') {
                     startGame()
+                } else if (gameState === 'playing') {
+                    handleJump()
                 } else if (gameState === 'gameover') {
                     retry()
                 }
@@ -94,7 +170,7 @@ export function DinoPage() {
 
         window.addEventListener('keydown', handleKeyDown)
         return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [gameState, startGame, retry])
+    }, [gameState, startGame, retry, handleJump])
 
     return (
         <div
@@ -126,8 +202,8 @@ export function DinoPage() {
             <div className="relative bg-gray-800 rounded-xl border-2 border-gray-700 shadow-2xl overflow-hidden">
                 <canvas
                     ref={canvasRef}
-                    width={800}
-                    height={300}
+                    width={CANVAS_WIDTH}
+                    height={CANVAS_HEIGHT}
                     className="block"
                     data-testid="game-canvas"
                 />
@@ -173,7 +249,7 @@ export function DinoPage() {
             <div className="mt-6 text-gray-400 text-center">
                 <p className="mb-2">🎮 操作方法</p>
                 <div className="flex gap-4 justify-center">
-                    <span className="bg-gray-800 px-3 py-1 rounded">スペース</span>
+                    <span className="bg-gray-800 px-3 py-1 rounded">スペース / タップ</span>
                     <span>ジャンプ</span>
                 </div>
             </div>
@@ -181,9 +257,12 @@ export function DinoPage() {
             {/* タッチ操作ボタン（モバイル用） */}
             {gameState === 'playing' && (
                 <button
-                    onClick={() => {/* ジャンプ処理 */ }}
-                    onTouchStart={() => {/* ジャンプ処理 */ }}
-                    className="mt-4 px-12 py-6 bg-gray-800 hover:bg-gray-700 text-white font-bold rounded-xl border-2 border-gray-600 md:hidden"
+                    onClick={handleJump}
+                    onTouchStart={(e) => {
+                        e.preventDefault()
+                        handleJump()
+                    }}
+                    className="mt-4 px-12 py-6 bg-gray-800 hover:bg-gray-700 text-white font-bold rounded-xl border-2 border-gray-600 active:bg-green-600 md:hidden"
                 >
                     タップでジャンプ
                 </button>
@@ -201,5 +280,6 @@ export function DinoPage() {
         </div>
     )
 }
+
 
 export default DinoPage
