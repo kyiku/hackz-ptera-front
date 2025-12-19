@@ -7,26 +7,12 @@
 import { useRef, useEffect, useState, useCallback } from 'react'
 import { Dinosaur, GROUND_Y } from '../components/dino/Dinosaur'
 import { ObstacleManager } from '../components/dino/Obstacle'
+import { checkCollision } from '../components/dino/CollisionDetector'
 
 type GameState = 'ready' | 'playing' | 'gameover'
 
 const CANVAS_WIDTH = 800
 const CANVAS_HEIGHT = 300
-
-/**
- * 当たり判定チェック（AABB衝突）
- */
-function checkCollision(
-    a: { x: number; y: number; width: number; height: number },
-    b: { x: number; y: number; width: number; height: number }
-): boolean {
-    return (
-        a.x < b.x + b.width &&
-        a.x + a.width > b.x &&
-        a.y < b.y + b.height &&
-        a.y + a.height > b.y
-    )
-}
 
 export function DinoPage() {
     const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -39,6 +25,7 @@ export function DinoPage() {
     const [score, setScore] = useState(0)
     const [timer, setTimer] = useState(0)
     const [highScore, setHighScore] = useState(0)
+    const [isNewHighScore, setIsNewHighScore] = useState(false)
 
     // 恐竜・障害物マネージャー初期化
     useEffect(() => {
@@ -50,8 +37,16 @@ export function DinoPage() {
     const handleGameOver = useCallback(() => {
         cancelAnimationFrame(animationFrameRef.current)
         setGameState('gameover')
-        setHighScore(prev => Math.max(prev, scoreRef.current))
-    }, [])
+
+        // ハイスコア判定
+        const currentScore = scoreRef.current
+        if (currentScore > highScore) {
+            setHighScore(currentScore)
+            setIsNewHighScore(true)
+        } else {
+            setIsNewHighScore(false)
+        }
+    }, [highScore])
 
     // ゲームループ
     const gameLoop = useCallback(() => {
@@ -275,9 +270,14 @@ export function DinoPage() {
                         <p className="text-red-400 text-3xl font-bold mb-2">
                             ゲームオーバー
                         </p>
-                        <p className="text-white text-xl mb-4">
+                        <p className="text-white text-xl mb-2">
                             スコア: {score}
                         </p>
+                        {isNewHighScore && (
+                            <p className="text-yellow-400 text-lg font-bold mb-4 animate-pulse">
+                                🎉 NEW HIGH SCORE!
+                            </p>
+                        )}
                         <button
                             onClick={retry}
                             className="px-8 py-3 bg-violet-600 hover:bg-violet-700 text-white font-bold rounded-lg transition-colors text-lg"
