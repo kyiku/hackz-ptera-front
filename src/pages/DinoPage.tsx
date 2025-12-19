@@ -3,13 +3,15 @@
  * Issue #9: Dino RunページUI・基本構造
  *
  * Canvas要素を使用したゲームエリアとスコア・タイマー表示
+ * タイムアウト: 3分（180秒）
  */
 import { useRef, useEffect, useState, useCallback } from 'react'
 import { Dinosaur, GROUND_Y } from '../components/dino/Dinosaur'
 import { ObstacleManager } from '../components/dino/Obstacle'
 import { checkCollision } from '../components/dino/CollisionDetector'
+import { ScoreDisplay, TARGET_SCORE, isTimeout, isTargetAchieved } from '../components/dino/ScoreDisplay'
 
-type GameState = 'ready' | 'playing' | 'gameover'
+type GameState = 'ready' | 'playing' | 'gameover' | 'success'
 
 const CANVAS_WIDTH = 800
 const CANVAS_HEIGHT = 300
@@ -20,12 +22,14 @@ export function DinoPage() {
     const obstacleManagerRef = useRef<ObstacleManager | null>(null)
     const animationFrameRef = useRef<number>(0)
     const scoreRef = useRef<number>(0)
+    const timerRef = useRef<number>(0)
 
     const [gameState, setGameState] = useState<GameState>('ready')
     const [score, setScore] = useState(0)
     const [timer, setTimer] = useState(0)
     const [highScore, setHighScore] = useState(0)
     const [isNewHighScore, setIsNewHighScore] = useState(false)
+    const [isTimeoutFail, setIsTimeoutFail] = useState(false)
 
     // 恐竜・障害物マネージャー初期化
     useEffect(() => {
@@ -33,12 +37,26 @@ export function DinoPage() {
         obstacleManagerRef.current = new ObstacleManager(CANVAS_WIDTH)
     }, [])
 
+    // ゲーム成功処理
+    const handleSuccess = useCallback(() => {
+        cancelAnimationFrame(animationFrameRef.current)
+        setGameState('success')
+
+        const currentScore = scoreRef.current
+        if (currentScore > highScore) {
+            setHighScore(currentScore)
+            setIsNewHighScore(true)
+        } else {
+            setIsNewHighScore(false)
+        }
+    }, [highScore])
+
     // ゲームオーバー処理
-    const handleGameOver = useCallback(() => {
+    const handleGameOver = useCallback((timeout: boolean = false) => {
         cancelAnimationFrame(animationFrameRef.current)
         setGameState('gameover')
+        setIsTimeoutFail(timeout)
 
-        // ハイスコア判定
         const currentScore = scoreRef.current
         if (currentScore > highScore) {
             setHighScore(currentScore)
@@ -87,7 +105,7 @@ export function DinoPage() {
         for (const obstacle of obstacleManager.obstacles) {
             const obstacleHitbox = obstacle.getHitbox()
             if (checkCollision(dinoHitbox, obstacleHitbox)) {
-                handleGameOver()
+                handleGameOver(false)
                 return
             }
         }
@@ -96,9 +114,15 @@ export function DinoPage() {
         scoreRef.current += 1
         setScore(scoreRef.current)
 
+        // 目標スコア達成チェック
+        if (isTargetAchieved(scoreRef.current, TARGET_SCORE)) {
+            handleSuccess()
+            return
+        }
+
         // ゲームループ継続
         animationFrameRef.current = requestAnimationFrame(gameLoop)
-    }, [handleGameOver])
+    }, [handleGameOver, handleSuccess])
 
     // ゲーム開始
     const startGame = useCallback(() => {
@@ -109,9 +133,11 @@ export function DinoPage() {
             obstacleManagerRef.current.reset()
         }
         scoreRef.current = 0
+        timerRef.current = 0
         setGameState('playing')
         setScore(0)
         setTimer(0)
+        setIsTimeoutFail(false)
         animationFrameRef.current = requestAnimationFrame(gameLoop)
     }, [gameLoop])
 
@@ -124,9 +150,11 @@ export function DinoPage() {
             obstacleManagerRef.current.reset()
         }
         scoreRef.current = 0
+        timerRef.current = 0
         setGameState('ready')
         setScore(0)
         setTimer(0)
+        setIsTimeoutFail(false)
     }, [])
 
     // ジャンプ処理
@@ -136,16 +164,22 @@ export function DinoPage() {
         }
     }, [gameState])
 
-    // タイマー更新
+    // タイマー更新（3分タイムアウト）
     useEffect(() => {
         if (gameState !== 'playing') return
 
         const interval = setInterval(() => {
-            setTimer(prev => prev + 1)
+            timerRef.current += 1
+            setTimer(timerRef.current)
+
+            // タイムアウトチェック
+            if (isTimeout(timerRef.current)) {
+                handleGameOver(true)
+            }
         }, 1000)
 
         return () => clearInterval(interval)
-    }, [gameState])
+    }, [gameState, handleGameOver])
 
     // 初期描画
     useEffect(() => {
@@ -200,7 +234,7 @@ export function DinoPage() {
                     startGame()
                 } else if (gameState === 'playing') {
                     handleJump()
-                } else if (gameState === 'gameover') {
+                } else if (gameState === 'gameover' || gameState === 'success') {
                     retry()
                 }
             }
@@ -221,20 +255,14 @@ export function DinoPage() {
             </h1>
 
             {/* スコア・タイマー表示エリア */}
-            <div className="flex gap-8 mb-4 text-white">
-                <div className="bg-gray-800/80 px-6 py-3 rounded-lg">
-                    <span className="text-gray-400 text-sm">スコア</span>
-                    <div className="text-2xl font-bold text-green-400">{score}</div>
-                </div>
-                <div className="bg-gray-800/80 px-6 py-3 rounded-lg">
-                    <span className="text-gray-400 text-sm">タイム</span>
-                    <div className="text-2xl font-bold text-blue-400">{timer}秒</div>
-                </div>
-                <div className="bg-gray-800/80 px-6 py-3 rounded-lg">
-                    <span className="text-gray-400 text-sm">ハイスコア</span>
-                    <div className="text-2xl font-bold text-yellow-400">{highScore}</div>
-                </div>
-            </div>
+            <ScoreDisplay
+                score={score}
+                time={timer}
+                highScore={highScore}
+                targetScore={TARGET_SCORE}
+                showTargetScore={gameState === 'playing'}
+                isGameOver={gameState === 'gameover' || gameState === 'success'}
+            />
 
             {/* ゲームエリア（Canvas） */}
             <div className="relative bg-gray-800 rounded-xl border-2 border-gray-700 shadow-2xl overflow-hidden">
@@ -249,8 +277,11 @@ export function DinoPage() {
                 {/* スタート画面オーバーレイ */}
                 {gameState === 'ready' && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50">
-                        <p className="text-gray-300 text-lg mb-4">
+                        <p className="text-gray-300 text-lg mb-2">
                             障害物を避けて生き残れ！
+                        </p>
+                        <p className="text-purple-400 text-sm mb-4">
+                            制限時間: 3分 / 目標スコア: {TARGET_SCORE}
                         </p>
                         <button
                             onClick={startGame}
@@ -268,14 +299,19 @@ export function DinoPage() {
                 {gameState === 'gameover' && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70">
                         <p className="text-red-400 text-3xl font-bold mb-2">
-                            ゲームオーバー
+                            {isTimeoutFail ? '⏰ タイムアウト' : 'ゲームオーバー'}
                         </p>
                         <p className="text-white text-xl mb-2">
                             スコア: {score}
                         </p>
                         {isNewHighScore && (
-                            <p className="text-yellow-400 text-lg font-bold mb-4 animate-pulse">
+                            <p className="text-yellow-400 text-lg font-bold mb-2 animate-pulse">
                                 🎉 NEW HIGH SCORE!
+                            </p>
+                        )}
+                        {isTimeoutFail && (
+                            <p className="text-gray-400 text-sm mb-4">
+                                3分以内にクリアできませんでした
                             </p>
                         )}
                         <button
@@ -283,6 +319,32 @@ export function DinoPage() {
                             className="px-8 py-3 bg-violet-600 hover:bg-violet-700 text-white font-bold rounded-lg transition-colors text-lg"
                         >
                             リトライ
+                        </button>
+                    </div>
+                )}
+
+                {/* 成功画面オーバーレイ */}
+                {gameState === 'success' && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70">
+                        <p className="text-green-400 text-3xl font-bold mb-2 animate-bounce">
+                            🎉 クリア！
+                        </p>
+                        <p className="text-white text-xl mb-2">
+                            スコア: {score}
+                        </p>
+                        <p className="text-blue-400 text-lg mb-2">
+                            タイム: {Math.floor(timer / 60)}分{timer % 60}秒
+                        </p>
+                        {isNewHighScore && (
+                            <p className="text-yellow-400 text-lg font-bold mb-2 animate-pulse">
+                                🏆 NEW HIGH SCORE!
+                            </p>
+                        )}
+                        <button
+                            onClick={retry}
+                            className="px-8 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-colors text-lg"
+                        >
+                            もう一度プレイ
                         </button>
                     </div>
                 )}
@@ -313,6 +375,7 @@ export function DinoPage() {
         </div>
     )
 }
+
 
 
 
