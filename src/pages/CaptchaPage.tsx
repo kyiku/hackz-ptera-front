@@ -1,122 +1,160 @@
 /**
  * CaptchaPage - CAPTCHA認証ページ
  *
- * 画像選択型CAPTCHAの基本UI
- * - 説明文表示
- * - 画像選択エリア
+ * 座標クリック型CAPTCHAのUI
+ * - API連携（画像取得・検証）
+ * - クリック座標取得
  * - 残り試行回数表示
  */
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { CaptchaImage } from '../components/captcha/CaptchaImage'
+import type { ClickPosition } from '../components/captcha/CaptchaImage'
+import {
+    getCaptchaImageMock,
+    verifyCaptchaMock,
+    isVerifySuccess,
+    isVerifyFinalFailure,
+    saveCaptchaToken,
+} from '../api/captchaApi'
+import type { CaptchaVerifyResponse } from '../api/captchaApi'
 
 // CAPTCHA設定
 const MAX_ATTEMPTS = 3
-const GRID_SIZE = 9  // 3x3 グリッド
-const TARGET_DESCRIPTION = '信号機を含む画像をすべて選択してください'
 
-// モック画像データ
-const MOCK_IMAGES = Array.from({ length: GRID_SIZE }, (_, i) => ({
-    id: i,
-    url: `https://picsum.photos/seed/${i + 1}/200/200`,
-    isTarget: i === 0 || i === 3 || i === 7,  // モック: 特定の画像がターゲット
-}))
-
-type CaptchaState = 'idle' | 'verifying' | 'success' | 'error'
+type CaptchaState = 'loading' | 'idle' | 'verifying' | 'success' | 'error'
 
 export function CaptchaPage() {
     const navigate = useNavigate()
 
-    const [selectedImages, setSelectedImages] = useState<Set<number>>(new Set())
+    const [imageUrl, setImageUrl] = useState<string>('')
+    const [selectedPosition, setSelectedPosition] = useState<ClickPosition | null>(null)
     const [remainingAttempts, setRemainingAttempts] = useState(MAX_ATTEMPTS)
-    const [captchaState, setCaptchaState] = useState<CaptchaState>('idle')
-    const [errorMessage, setErrorMessage] = useState<string>('')
-    const [images, setImages] = useState(MOCK_IMAGES)
+    const [captchaState, setCaptchaState] = useState<CaptchaState>('loading')
+    const [message, setMessage] = useState<string>('')
+    const [redirectCountdown, setRedirectCountdown] = useState<number | null>(null)
 
-    // 画像選択トグル
-    const toggleImage = useCallback((imageId: number) => {
-        if (captchaState === 'verifying' || captchaState === 'success') return
+    // CAPTCHA画像を取得
+    const loadCaptchaImage = useCallback(async () => {
+        setCaptchaState('loading')
+        setMessage('')
+        setSelectedPosition(null)
 
-        setSelectedImages(prev => {
-            const newSet = new Set(prev)
-            if (newSet.has(imageId)) {
-                newSet.delete(imageId)
-            } else {
-                newSet.add(imageId)
-            }
-            return newSet
-        })
-    }, [captchaState])
+        try {
+            const response = await getCaptchaImageMock()
+            setImageUrl(response.image_url)
+            setMessage(response.message)
+            setCaptchaState('idle')
+        } catch (error) {
+            setCaptchaState('error')
+            setMessage('画像の取得に失敗しました。ページを更新してください。')
+        }
+    }, [])
+
+    // 初回ロード
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            loadCaptchaImage()
+        }, 0)
+        return () => clearTimeout(timer)
+    }, [loadCaptchaImage])
+
+    // 画像クリック時のハンドラ
+    const handleImageSelect = useCallback((positions: ClickPosition[]) => {
+        // 最新の1つだけを使用
+        if (positions.length > 0) {
+            setSelectedPosition(positions[positions.length - 1])
+        } else {
+            setSelectedPosition(null)
+        }
+    }, [])
 
     // CAPTCHA検証
     const verifyCaptcha = useCallback(async () => {
-        if (selectedImages.size === 0) {
-            setErrorMessage('画像を選択してください')
+        if (!selectedPosition) {
+            setMessage('画像をクリックして位置を選択してください')
             return
         }
 
         setCaptchaState('verifying')
-        setErrorMessage('')
+        setMessage('')
 
-        // モック検証（1秒の遅延）
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        try {
+            const response: CaptchaVerifyResponse = await verifyCaptchaMock({
+                x: selectedPosition.x,
+                y: selectedPosition.y,
+            })
 
-        // 正解判定（モック）
-        const correctImages = images.filter(img => img.isTarget).map(img => img.id)
-        const isCorrect =
-            correctImages.length === selectedImages.size &&
-            correctImages.every(id => selectedImages.has(id))
+            if (isVerifySuccess(response)) {
+                // 成功: トークン保存して次のページへ
+                setCaptchaState('success')
+                setMessage(response.message)
+                saveCaptchaToken(response.token)
 
-        if (isCorrect) {
-            setCaptchaState('success')
-            // 2秒後に次のページへ遷移
-            setTimeout(() => {
-                navigate('/register')
-            }, 2000)
-        } else {
-            const newAttempts = remainingAttempts - 1
-            setRemainingAttempts(newAttempts)
-
-            if (newAttempts <= 0) {
+                setTimeout(() => {
+                    navigate('/register')
+                }, 2000)
+            } else if (isVerifyFinalFailure(response)) {
+                // 最終失敗: リダイレクトカウントダウン
                 setCaptchaState('error')
-                setErrorMessage('試行回数の上限に達しました。ページを更新してやり直してください。')
+                setMessage(response.message)
+                setRemainingAttempts(0)
+                setRedirectCountdown(response.redirect_delay)
             } else {
+                // リトライ可能な失敗
+                setRemainingAttempts(response.attempts_remaining)
+                setMessage(response.message)
+                setImageUrl(response.new_image_url)
+                setSelectedPosition(null)
                 setCaptchaState('idle')
-                setErrorMessage(`不正解です。残り${newAttempts}回`)
-                // 新しいCAPTCHA画像を読み込む（モック）
-                setImages(MOCK_IMAGES.map(img => ({
-                    ...img,
-                    url: `https://picsum.photos/seed/${img.id + Date.now()}/200/200`,
-                })))
-                setSelectedImages(new Set())
             }
+        } catch (error) {
+            setCaptchaState('error')
+            setMessage('検証に失敗しました。もう一度お試しください。')
         }
-    }, [selectedImages, images, remainingAttempts, navigate])
+    }, [selectedPosition, navigate])
+
+    // リダイレクトカウントダウン
+    useEffect(() => {
+        if (redirectCountdown === null || redirectCountdown <= 0) return
+
+        const timer = setTimeout(() => {
+            setRedirectCountdown(prev => (prev !== null ? prev - 1 : null))
+        }, 1000)
+
+        return () => clearTimeout(timer)
+    }, [redirectCountdown])
+
+    // カウントダウン終了時
+    useEffect(() => {
+        if (redirectCountdown === 0) {
+            const timer = setTimeout(() => {
+                setRedirectCountdown(null)
+            }, 0)
+            return () => clearTimeout(timer)
+        }
+    }, [redirectCountdown])
 
     // ページリセット
     const resetCaptcha = useCallback(() => {
-        setSelectedImages(new Set())
         setRemainingAttempts(MAX_ATTEMPTS)
-        setCaptchaState('idle')
-        setErrorMessage('')
-        setImages(MOCK_IMAGES.map(img => ({
-            ...img,
-            url: `https://picsum.photos/seed/${img.id + Date.now()}/200/200`,
-        })))
-    }, [])
+        setRedirectCountdown(null)
+        loadCaptchaImage()
+    }, [loadCaptchaImage])
 
     return (
         <div
             data-testid="captcha-page"
             className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4"
         >
-            <div className="bg-gray-800/90 backdrop-blur-sm border border-gray-700 rounded-2xl shadow-2xl p-6 sm:p-8 w-full max-w-lg">
+            <div className="bg-gray-800/90 backdrop-blur-sm border border-gray-700 rounded-2xl shadow-2xl p-6 sm:p-8 w-full max-w-4xl">
                 {/* ヘッダー */}
                 <div className="text-center mb-6">
                     <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">
                         🤖 ロボットではないことを確認
                     </h1>
                     <p className="text-gray-400 text-sm">
-                        以下の指示に従って画像を選択してください
+                        画像内の指定されたポイントをクリックしてください
                     </p>
                 </div>
 
@@ -135,53 +173,37 @@ export function CaptchaPage() {
                 </div>
 
                 {/* 説明文 */}
-                <div className="bg-blue-900/50 border border-blue-700 rounded-lg p-4 mb-6">
-                    <p className="text-blue-300 font-medium text-center">
-                        {TARGET_DESCRIPTION}
-                    </p>
+                {message && captchaState !== 'error' && captchaState !== 'success' && (
+                    <div className="bg-blue-900/50 border border-blue-700 rounded-lg p-4 mb-6">
+                        <p className="text-blue-300 font-medium text-center">
+                            {message}
+                        </p>
+                    </div>
+                )}
+
+                {/* CAPTCHA画像エリア */}
+                <div className="mb-6">
+                    <CaptchaImage
+                        imageUrl={imageUrl}
+                        onSelect={handleImageSelect}
+                        maxSelections={1}
+                        disabled={captchaState === 'verifying' || captchaState === 'success' || captchaState === 'error'}
+                    />
                 </div>
 
-                {/* 画像グリッド */}
-                <div
-                    data-testid="captcha-image-grid"
-                    className="grid grid-cols-3 gap-2 mb-6"
-                >
-                    {images.map((image) => (
-                        <button
-                            key={image.id}
-                            onClick={() => toggleImage(image.id)}
-                            disabled={captchaState === 'verifying' || captchaState === 'success'}
-                            className={`
-                relative aspect-square rounded-lg overflow-hidden border-4 transition-all
-                ${selectedImages.has(image.id)
-                                    ? 'border-blue-500 ring-2 ring-blue-400'
-                                    : 'border-transparent hover:border-gray-600'
-                                }
-                ${captchaState === 'verifying' || captchaState === 'success'
-                                    ? 'opacity-50 cursor-not-allowed'
-                                    : 'cursor-pointer'
-                                }
-              `}
-                        >
-                            <img
-                                src={image.url}
-                                alt={`CAPTCHA画像 ${image.id + 1}`}
-                                className="w-full h-full object-cover"
-                                loading="lazy"
-                            />
-                            {selectedImages.has(image.id) && (
-                                <div className="absolute inset-0 bg-blue-500/30 flex items-center justify-center">
-                                    <span className="text-white text-3xl">✓</span>
-                                </div>
-                            )}
-                        </button>
-                    ))}
-                </div>
+                {/* 選択座標表示 */}
+                {selectedPosition && captchaState === 'idle' && (
+                    <div className="bg-gray-700/50 rounded-lg p-3 mb-4 text-center">
+                        <p className="text-gray-300 text-sm">
+                            選択座標: ({selectedPosition.x}, {selectedPosition.y})
+                        </p>
+                    </div>
+                )}
 
                 {/* エラーメッセージ */}
-                {errorMessage && (
+                {captchaState === 'error' && (
                     <div className="bg-red-900/50 border border-red-700 rounded-lg p-3 mb-4">
-                        <p className="text-red-400 text-sm text-center">{errorMessage}</p>
+                        <p className="text-red-400 text-sm text-center">{message}</p>
                     </div>
                 )}
 
@@ -189,8 +211,15 @@ export function CaptchaPage() {
                 {captchaState === 'success' && (
                     <div className="bg-green-900/50 border border-green-700 rounded-lg p-3 mb-4">
                         <p className="text-green-400 text-sm text-center">
-                            ✓ 認証成功！登録ページへ移動します...
+                            ✓ {message} 登録ページへ移動します...
                         </p>
+                    </div>
+                )}
+
+                {/* カウントダウン表示 */}
+                {redirectCountdown !== null && redirectCountdown > 0 && (
+                    <div className="text-yellow-400 text-sm text-center mb-4">
+                        {redirectCountdown}秒後にリトライ可能...
                     </div>
                 )}
 
@@ -198,10 +227,10 @@ export function CaptchaPage() {
                 {captchaState !== 'success' && remainingAttempts > 0 && (
                     <button
                         onClick={verifyCaptcha}
-                        disabled={captchaState === 'verifying'}
+                        disabled={captchaState === 'verifying' || captchaState === 'loading' || !selectedPosition}
                         className={`
               w-full py-3 rounded-lg font-bold text-white transition-colors
-              ${captchaState === 'verifying'
+              ${captchaState === 'verifying' || captchaState === 'loading' || !selectedPosition
                                 ? 'bg-gray-600 cursor-not-allowed'
                                 : 'bg-blue-600 hover:bg-blue-700'
                             }
@@ -212,6 +241,11 @@ export function CaptchaPage() {
                                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                                 検証中...
                             </span>
+                        ) : captchaState === 'loading' ? (
+                            <span className="flex items-center justify-center gap-2">
+                                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                読み込み中...
+                            </span>
                         ) : (
                             '確認'
                         )}
@@ -219,7 +253,7 @@ export function CaptchaPage() {
                 )}
 
                 {/* リセットボタン（試行回数切れ時） */}
-                {remainingAttempts <= 0 && (
+                {remainingAttempts <= 0 && redirectCountdown === null && (
                     <button
                         onClick={resetCaptcha}
                         className="w-full py-3 bg-violet-600 hover:bg-violet-700 text-white font-bold rounded-lg transition-colors"
