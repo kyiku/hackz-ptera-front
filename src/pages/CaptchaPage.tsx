@@ -5,11 +5,13 @@
  * - API連携（画像取得・検証）
  * - クリック座標取得
  * - 残り試行回数表示
+ * - 3分タイムアウト
  */
 import { useState, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CaptchaImage } from '../components/captcha/CaptchaImage'
 import type { ClickPosition } from '../components/captcha/CaptchaImage'
+import { CaptchaTimer, DEFAULT_TIMEOUT_SECONDS } from '../components/captcha/CaptchaTimer'
 import {
     getCaptchaImageMock,
     verifyCaptchaMock,
@@ -22,7 +24,7 @@ import type { CaptchaVerifyResponse } from '../api/captchaApi'
 // CAPTCHA設定
 const MAX_ATTEMPTS = 3
 
-type CaptchaState = 'loading' | 'idle' | 'verifying' | 'success' | 'error'
+type CaptchaState = 'loading' | 'idle' | 'verifying' | 'success' | 'error' | 'timeout'
 
 export function CaptchaPage() {
     const navigate = useNavigate()
@@ -33,6 +35,7 @@ export function CaptchaPage() {
     const [captchaState, setCaptchaState] = useState<CaptchaState>('loading')
     const [message, setMessage] = useState<string>('')
     const [redirectCountdown, setRedirectCountdown] = useState<number | null>(null)
+    const [timerKey, setTimerKey] = useState(0)  // タイマーリセット用
 
     // CAPTCHA画像を取得
     const loadCaptchaImage = useCallback(async () => {
@@ -135,10 +138,21 @@ export function CaptchaPage() {
         }
     }, [redirectCountdown])
 
+    // タイムアウト処理
+    const handleTimeout = useCallback(() => {
+        setCaptchaState('timeout')
+        setMessage('時間切れです。待機列の最後尾に移動します。')
+        // 3秒後に待機列ページへリダイレクト
+        setTimeout(() => {
+            navigate('/queue')
+        }, 3000)
+    }, [navigate])
+
     // ページリセット
     const resetCaptcha = useCallback(() => {
         setRemainingAttempts(MAX_ATTEMPTS)
         setRedirectCountdown(null)
+        setTimerKey(prev => prev + 1)  // タイマーリセット
         loadCaptchaImage()
     }, [loadCaptchaImage])
 
@@ -148,6 +162,17 @@ export function CaptchaPage() {
             className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4"
         >
             <div className="bg-gray-800/90 backdrop-blur-sm border border-gray-700 rounded-2xl shadow-2xl p-6 sm:p-8 w-full max-w-4xl">
+                {/* タイマー */}
+                <div className="mb-6">
+                    <CaptchaTimer
+                        key={timerKey}
+                        duration={DEFAULT_TIMEOUT_SECONDS}
+                        onTimeout={handleTimeout}
+                        isPaused={captchaState === 'verifying' || captchaState === 'success' || captchaState === 'timeout'}
+                        showProgressBar={true}
+                    />
+                </div>
+
                 {/* ヘッダー */}
                 <div className="text-center mb-6">
                     <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">
