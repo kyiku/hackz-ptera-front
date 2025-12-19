@@ -4,41 +4,18 @@
  *
  * WebSocket接続状態と待機順位を表示するページ
  */
-import { useState, useEffect } from 'react'
 import { QueuePosition } from '../components/queue/QueuePosition'
-
-type ConnectionStatus = 'connecting' | 'connected' | 'error'
+import { useQueueWebSocketMock } from '../hooks/useQueueWebSocketMock'
 
 export function QueuePage() {
-  const [status, setStatus] = useState<ConnectionStatus>('connecting')
-  const [queuePosition, setQueuePosition] = useState<number>(10)
-  const [totalWaiting, setTotalWaiting] = useState<number>(50)
-  const [message, setMessage] = useState<string>('')
-
-  // シミュレーション: 接続後に待機順位を表示
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setStatus('connected')
-      setMessage('順番が来るまでお待ちください')
-    }, 2000)
-
-    return () => clearTimeout(timer)
-  }, [])
-
-  // シミュレーション: 順位が徐々に減少（アニメーションデモ用）
-  useEffect(() => {
-    if (status !== 'connected') return
-
-    const interval = setInterval(() => {
-      setQueuePosition(prev => {
-        if (prev <= 1) return 1
-        return prev - 1
-      })
-      setTotalWaiting(prev => Math.max(prev - 1, 10))
-    }, 3000)
-
-    return () => clearInterval(interval)
-  }, [status])
+  const {
+    isConnected,
+    isConnecting,
+    error,
+    position,
+    totalWaiting,
+    reconnect,
+  } = useQueueWebSocketMock()
 
   return (
     <div
@@ -52,7 +29,7 @@ export function QueuePage() {
         </h1>
 
         {/* 接続状態表示 */}
-        {status === 'connecting' && (
+        {isConnecting && (
           <div className="space-y-4">
             <div className="flex items-center justify-center gap-2">
               <div className="w-3 h-3 bg-yellow-400 rounded-full animate-pulse" />
@@ -64,11 +41,11 @@ export function QueuePage() {
           </div>
         )}
 
-        {/* 待機順位表示エリア - QueuePositionコンポーネント使用 */}
-        {status === 'connected' && (
+        {/* 待機順位表示エリア - WebSocket経由で更新 */}
+        {isConnected && (
           <div className="space-y-6">
             <QueuePosition
-              position={queuePosition}
+              position={position}
               totalWaiting={totalWaiting}
             />
 
@@ -76,13 +53,13 @@ export function QueuePage() {
             <div className="bg-gray-700/50 rounded-lg p-4">
               <p className="text-gray-400 text-xs mb-1">推定待機時間</p>
               <p className="text-white text-xl font-semibold">
-                約 {Math.ceil(queuePosition * 1.5)} 分
+                約 {Math.ceil(position * 1.5)} 分
               </p>
             </div>
 
             {/* メッセージ表示エリア */}
             <div className="text-gray-300 text-sm">
-              {message}
+              順番が来るまでお待ちください
             </div>
 
             {/* アニメーション付きインジケーター */}
@@ -99,21 +76,13 @@ export function QueuePage() {
         )}
 
         {/* エラー状態 */}
-        {status === 'error' && (
+        {error && (
           <div className="space-y-4">
             <div className="text-red-400 text-lg">
-              接続エラーが発生しました
+              {error}
             </div>
             <button
-              onClick={() => {
-                setStatus('connecting')
-                setQueuePosition(10)
-                setTotalWaiting(50)
-                setTimeout(() => {
-                  setStatus('connected')
-                  setMessage('順番が来るまでお待ちください')
-                }, 2000)
-              }}
+              onClick={reconnect}
               className="px-6 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg transition-colors"
             >
               再接続
