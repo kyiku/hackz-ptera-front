@@ -99,46 +99,133 @@ export async function analyzePassword(
 
 // --- モック関数（フロントエンド開発用） ---
 
+// よくある名前パターン
+const COMMON_NAMES = [
+    'yuki', 'hana', 'sora', 'rin', 'miku', 'yui', 'ai', 'mei', 'sakura', 'taro',
+    'ken', 'ryo', 'yuto', 'sota', 'haruto', 'takumi', 'kenta', 'daiki', 'shota',
+    'akira', 'hiroshi', 'kenji', 'masaki', 'naoki', 'ryota', 'kazuki', 'tomoya',
+    'love', 'happy', 'angel', 'candy', 'honey', 'baby', 'sweet', 'cute', 'princess',
+]
+
+// 誕生日パターンを検出
+function detectBirthday(password: string): string | null {
+    // YYYYMMDD, YYMMDD, MMDD パターン
+    const patterns = [
+        /(?:19|20)(\d{2})(\d{2})(\d{2})/, // 19YYMMDD or 20YYMMDD
+        /(\d{2})(\d{2})(\d{2})/, // YYMMDD
+        /(\d{2})(\d{2})$/, // MMDD at end
+    ]
+
+    for (const pattern of patterns) {
+        const match = password.match(pattern)
+        if (match) {
+            if (match.length === 4) {
+                const [, , mm, dd] = match
+                const month = parseInt(mm)
+                const day = parseInt(dd)
+                if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+                    return `${month}月${day}日`
+                }
+            } else if (match.length === 3) {
+                const [, mm, dd] = match
+                const month = parseInt(mm)
+                const day = parseInt(dd)
+                if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+                    return `${month}月${day}日`
+                }
+            }
+        }
+    }
+    return null
+}
+
+// 名前パターンを検出
+function detectName(password: string): string | null {
+    const lower = password.toLowerCase()
+    for (const name of COMMON_NAMES) {
+        if (lower.includes(name)) {
+            return name.charAt(0).toUpperCase() + name.slice(1)
+        }
+    }
+    // 連続する英字を名前として推測
+    const nameMatch = password.match(/[a-zA-Z]{3,}/)
+    if (nameMatch) {
+        return nameMatch[0]
+    }
+    return null
+}
+
 /**
  * パスワード解析（モック）
- * パスワードの強度に応じて煽りメッセージを生成
+ * 煽りメッセージ＋誕生日・名前推測
  */
 export async function analyzePasswordMock(
     request: PasswordAnalyzeRequest
 ): Promise<PasswordAnalyzeResponse> {
-    // 遅延をシミュレート（500ms - 1.5sのランダム）
-    await new Promise(resolve => setTimeout(resolve, Math.random() * 1000 + 500))
+    // 遅延をシミュレート（300ms - 800ms）
+    await new Promise(resolve => setTimeout(resolve, Math.random() * 500 + 300))
 
     const { password } = request
+    const birthday = detectBirthday(password)
+    const name = detectName(password)
 
-    // よくある弱いパスワードのパターン
-    const commonPasswords = ['password', '123456', 'qwerty', 'abc123', 'password123']
-    const isCommon = commonPasswords.some(common => 
-        password.toLowerCase().includes(common.toLowerCase())
-    )
+    const taunts: string[] = []
 
-    // パスワード強度の簡易判定
-    const hasUpper = /[A-Z]/.test(password)
-    const hasLower = /[a-z]/.test(password)
-    const hasNumber = /[0-9]/.test(password)
-    const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password)
-    const length = password.length
-
-    let message = ''
-
-    if (isCommon) {
-        message = `「${password}」ですか？そのパスワード、辞書攻撃で3秒で破られますよ...`
-    } else if (length < 6) {
-        message = `${length}文字？それ本当にパスワードですか？小学生でももっと長いの作れますよ。`
-    } else if (length < 8 || (!hasUpper && !hasLower) || !hasNumber) {
-        message = `そのパスワード、総当たり攻撃で${Math.floor(Math.random() * 10 + 1)}分で突破されます。もっと強くしましょう。`
-    } else if (!hasSpecial || (!hasUpper || !hasLower)) {
-        message = `まあまあですね。でも、特殊文字や大文字小文字を混ぜるともっと安全です。現状だと${Math.floor(Math.random() * 100 + 50)}時間で突破されそうです。`
-    } else if (length < 12) {
-        message = `悪くないですね。でも12文字以上にすると、突破までの時間が${Math.floor(Math.random() * 1000 + 1000)}倍になりますよ。`
-    } else {
-        message = `なかなか強いパスワードですね。でも、このパターンで${Math.floor(Math.random() * 5 + 1)}文字増やすだけで、さらに${Math.floor(Math.random() * 100 + 50)}倍安全になります。完璧を目指しましょう。`
+    // 誕生日推測
+    if (birthday) {
+        taunts.push(
+            `おっと、${birthday}生まれですか？誕生日をパスワードに使うなんて、ハッカーに「どうぞ突破してください」って言ってるようなものですよ。`,
+            `${birthday}...あなたの誕生日か、大切な人の誕生日ですね？SNSを3分見れば分かりますよ、そんなの。`,
+            `誕生日${birthday}を使ってますね。世界中のハッカーが最初に試すパターンですよ、それ。`,
+        )
     }
+
+    // 名前推測
+    if (name) {
+        taunts.push(
+            `「${name}」さん、ですか？自分の名前や恋人の名前をパスワードに入れるの、バレバレですよ？`,
+            `${name}...誰の名前ですか？彼氏？彼女？ペット？どれにしても危険すぎます。`,
+            `「${name}」って入ってますね。名前ベースのパスワードは辞書攻撃で一瞬で破られますよ。`,
+        )
+    }
+
+    // よくある弱いパスワード
+    const commonPasswords = ['password', '123456', 'qwerty', 'abc123', 'iloveyou', 'admin', 'letmein']
+    if (commonPasswords.some(cp => password.toLowerCase().includes(cp))) {
+        taunts.push(
+            `えっ...本気ですか？そのパスワード、世界で最も使われてるパスワードリストに載ってますよ。`,
+            `ちょっと待って。それ、ハッカーが最初の0.1秒で試すパスワードですよ？`,
+            `そのパスワード、小学生でも破れます。いや、幼稚園児でも無理かな...`,
+        )
+    }
+
+    // 数字だけ
+    if (/^\d+$/.test(password)) {
+        taunts.push(
+            `数字だけ？電話番号ですか？それともPINコード？どちらにしても危険すぎます。`,
+            `数字オンリーは論外です。10種類の文字しかないんですよ？`,
+        )
+    }
+
+    // 短すぎる
+    if (password.length < 8) {
+        taunts.push(
+            `${password.length}文字...？それパスワードじゃなくて暗証番号ですよね？`,
+            `たった${password.length}文字？私のAI処理で${Math.floor(Math.random() * 5 + 1)}秒で解読できちゃいますよ。`,
+        )
+    }
+
+    // デフォルトの煽り
+    if (taunts.length === 0) {
+        taunts.push(
+            `まあまあですね。でも私なら${Math.floor(Math.random() * 24 + 1)}時間で突破できそうです。`,
+            `悪くはないですが、もっと意味不明な文字列にしたほうがいいですよ。人間が覚えられるパスワードは弱いんです。`,
+            `このパスワード、あなたの性格が透けて見えますね。几帳面...いや、面倒くさがり？`,
+        )
+    }
+
+    // ランダムに1つ選択
+    const message = taunts[Math.floor(Math.random() * taunts.length)]
 
     return {
         error: false,

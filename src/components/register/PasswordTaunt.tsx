@@ -166,13 +166,16 @@ export const PasswordTaunt = ({
                 // メッセージが空の場合はデフォルトメッセージを使用
                 const finalMessage = resultMessage || getDefaultMessage()
                 setMessage(finalMessage)
-                speakMessage(finalMessage)
+                // パスワードを読み上げてからAIメッセージを読み上げ
+                const fullSpeech = `あなたのパスワードは、${password.split('').join('、')}、ですね。${finalMessage}`
+                speakMessage(fullSpeech)
             } catch (err) {
                 // エラー時はデフォルトメッセージを表示
                 console.log('Password analysis error:', err)
                 const randomMessage = getDefaultMessage()
                 setMessage(randomMessage)
-                speakMessage(randomMessage)
+                const fullSpeech = `あなたのパスワードは、${password.split('').join('、')}、ですね。${randomMessage}`
+                speakMessage(fullSpeech)
             } finally {
                 setIsLoading(false)
             }
