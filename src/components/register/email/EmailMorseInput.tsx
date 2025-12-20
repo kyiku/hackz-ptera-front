@@ -49,6 +49,7 @@ export const EmailMorseInput: React.FC<EmailMorseInputProps> = ({
         startCalibration,
         calibrationStatus,
         currentThreshold,
+        blinkProgress,
     } = useBlinkDetector({
         videoRef,
         onBlinkDetected: (event: BlinkEvent) => {
@@ -63,7 +64,12 @@ export const EmailMorseInput: React.FC<EmailMorseInputProps> = ({
             // 文字確定時のハンドラ
             handleSpace()
         },
-        earThreshold: 0.38, // ユーザー要望により調整 (default: 0.2 -> 0.38)
+        // 改良版パラメータ
+        dotMaxMs: 350,      // 350ms以下でドット
+        dashMaxMs: 1500,    // 1500ms以下でダッシュ
+        minBlinkMs: 80,     // 80ms以下はノイズ
+        charGapMs: 1500,    // 1.5秒で文字確定
+        earThreshold: 0.25, // より寛容な閾値
         debug: true,
     })
 
@@ -227,15 +233,38 @@ export const EmailMorseInput: React.FC<EmailMorseInputProps> = ({
 
                             {/* 検出状態表示 */}
                             {useBlinkMode && isDetecting && !isCalibrating && (
-                                <div className="bg-black bg-opacity-70 rounded p-2 text-white text-xs flex justify-between items-center">
-                                    <div className="flex items-center gap-2">
-                                        <div className={`w-3 h-3 rounded-full ${isBlinking ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)]' : 'bg-green-500'}`} />
-                                        <span className="font-bold font-mono">{isBlinking ? 'BLINK!' : 'OPEN'}</span>
+                                <div className="bg-black bg-opacity-80 rounded p-3 text-white">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <div className="flex items-center gap-2">
+                                            <div className={`w-4 h-4 rounded-full ${isBlinking ? 'bg-red-500 shadow-[0_0_15px_rgba(239,68,68,0.9)] animate-pulse' : 'bg-green-500'}`} />
+                                            <span className="font-bold">{isBlinking ? '瞬き中...' : '目を開いています'}</span>
+                                        </div>
+                                        <div className="text-right font-mono text-xs">
+                                            <div>EAR: {currentEAR.toFixed(3)}</div>
+                                            <div className="text-gray-400">閾値: {currentThreshold.toFixed(3)}</div>
+                                        </div>
                                     </div>
-                                    <div className="text-right font-mono text-[10px]">
-                                        <div>EAR: {currentEAR.toFixed(3)}</div>
-                                        <div className="text-gray-400">TH : {currentThreshold.toFixed(3)}</div>
-                                    </div>
+                                    {/* 瞬き進捗バー */}
+                                    {isBlinking && (
+                                        <div className="mt-2">
+                                            <div className="flex justify-between text-xs mb-1">
+                                                <span>・ドット</span>
+                                                <span>{blinkProgress}ms</span>
+                                                <span>− ダッシュ</span>
+                                            </div>
+                                            <div className="w-full bg-gray-700 rounded-full h-3 overflow-hidden">
+                                                <div
+                                                    className={`h-full transition-all duration-75 ${blinkProgress > 350 ? 'bg-orange-500' : 'bg-blue-500'}`}
+                                                    style={{ width: `${Math.min(100, (blinkProgress / 1500) * 100)}%` }}
+                                                />
+                                            </div>
+                                            <div className="flex justify-between text-xs text-gray-400 mt-1">
+                                                <span>0</span>
+                                                <span className="text-blue-400">|350ms</span>
+                                                <span>1500ms</span>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
@@ -249,11 +278,23 @@ export const EmailMorseInput: React.FC<EmailMorseInputProps> = ({
                     )}
                 </div>
 
-                <p className="text-xs text-gray-500 mt-2">
-                    {useBlinkMode
-                        ? '短く瞬きで「・」、長く瞬きで「−」が入力されます。反応が悪い場合は「感度調整」を試してください。'
-                        : '※ 瞬き検出を有効にするには「瞬き検出ON」ボタンを押してください'}
-                </p>
+                <div className="text-sm text-gray-600 mt-3 p-3 bg-gray-50 rounded-lg">
+                    {useBlinkMode ? (
+                        <div>
+                            <p className="font-medium mb-2">🎯 瞬き入力の使い方:</p>
+                            <ul className="list-disc list-inside space-y-1 text-xs">
+                                <li><strong>短い瞬き（〜350ms）</strong> → ドット（・）</li>
+                                <li><strong>長い瞬き（350ms〜1.5秒）</strong> → ダッシュ（−）</li>
+                                <li><strong>1.5秒待つ</strong> → 文字確定</li>
+                            </ul>
+                            <p className="mt-2 text-xs text-gray-500">
+                                反応が悪い場合は「感度調整」で自分の瞬きに合わせて調整してください
+                            </p>
+                        </div>
+                    ) : (
+                        <p>※ 瞬き検出を有効にするには「瞬き検出ON」ボタンを押してください</p>
+                    )}
+                </div>
             </div>
             {/* 入力中のモールス信号 */}
             <div className="mb-4 p-4 bg-gray-100 dark:bg-gray-800 rounded">

@@ -1,7 +1,7 @@
 /**
  * useBlinkDetector - 瞬き検出カスタムフック
  * Issue #38: メールアドレス入力 - 瞬きモールス信号UI
- * 
+ *
  * 機能:
  * - MediaPipe Face Meshを使用した瞬き検出
  * - EAR (Eye Aspect Ratio) による瞬き判定
@@ -35,13 +35,15 @@ export interface UseBlinkDetectorOptions {
     onBlinkDetected?: (event: BlinkEvent) => void
     /** 文字確定時のコールバック */
     onCharacterComplete?: () => void
-    /** ドットの閾値（ミリ秒） */
-    dotThreshold?: number
-    /** ダッシュの閾値（ミリ秒） */
-    dashThreshold?: number
+    /** ドットの最大時間（ミリ秒）- これより短いとドット */
+    dotMaxMs?: number
+    /** ダッシュの最大時間（ミリ秒）- これより長いと無効 */
+    dashMaxMs?: number
+    /** 最小瞬き時間（ミリ秒）- これより短いとノイズとして無視 */
+    minBlinkMs?: number
     /** 文字確定の間隔（ミリ秒） */
     charGapMs?: number
-    /** EARの閾値（瞬き判定） */
+    /** EARの閾値（瞬き判定）- 低いほど厳しい */
     earThreshold?: number
     /** デバッグモード */
     debug?: boolean
@@ -71,50 +73,45 @@ export interface UseBlinkDetectorReturn {
     calibrationStatus: string
     /** 現在の閾値 */
     currentThreshold: number
+    /** 瞬き進行中の時間（ms） */
+    blinkProgress: number
 }
 
-// 目のランドマークインデックス（MediaPipe Face Mesh）
-const LEFT_EYE_INDICES = {
-    upper: [159, 145],
-    lower: [144, 133],
-    left: [33],
-    right: [133],
+// 目のランドマークインデックス（MediaPipe Face Mesh - 改良版）
+// より正確な瞬き検出のため、6点を使用
+const LEFT_EYE = {
+    top: [159, 158],      // 上まぶた
+    bottom: [145, 153],   // 下まぶた
+    left: 33,             // 目頭
+    right: 133,           // 目尻
 }
 
-const RIGHT_EYE_INDICES = {
-    upper: [386, 374],
-    lower: [373, 362],
-    left: [362],
-    right: [263],
+const RIGHT_EYE = {
+    top: [386, 387],      // 上まぶた
+    bottom: [374, 380],   // 下まぶた
+    left: 362,            // 目頭
+    right: 263,           // 目尻
 }
 
 /**
  * EAR (Eye Aspect Ratio) を計算
  * 目が開いている時は大きな値、閉じている時は小さな値
  */
-function calculateEAR(landmarks: { x: number; y: number; z: number }[], eyeIndices: typeof LEFT_EYE_INDICES): number {
-    const p1 = landmarks[eyeIndices.upper[0]]
-    const p2 = landmarks[eyeIndices.upper[1]]
-    const p3 = landmarks[eyeIndices.lower[0]]
-    const p4 = landmarks[eyeIndices.lower[1]]
-    const p5 = landmarks[eyeIndices.left[0]]
-    const p6 = landmarks[eyeIndices.right[0]]
-
-    // 垂直距離
-    const vertical1 = Math.sqrt(
-        Math.pow(p1.x - p3.x, 2) + Math.pow(p1.y - p3.y, 2)
-    )
-    const vertical2 = Math.sqrt(
-        Math.pow(p2.x - p4.x, 2) + Math.pow(p2.y - p4.y, 2)
-    )
+function calculateEAR(
+    landmarks: { x: number; y: number; z: number }[],
+    eye: typeof LEFT_EYE
+): number {
+    // 垂直距離（2本の線の平均）
+    const v1 = Math.abs(landmarks[eye.top[0]].y - landmarks[eye.bottom[0]].y)
+    const v2 = Math.abs(landmarks[eye.top[1]].y - landmarks[eye.bottom[1]].y)
+    const verticalAvg = (v1 + v2) / 2
 
     // 水平距離
-    const horizontal = Math.sqrt(
-        Math.pow(p5.x - p6.x, 2) + Math.pow(p5.y - p6.y, 2)
-    )
+    const horizontal = Math.abs(landmarks[eye.left].x - landmarks[eye.right].x)
 
-    // EAR計算
-    return (vertical1 + vertical2) / (2.0 * horizontal)
+    // EAR = 垂直 / 水平
+    if (horizontal === 0) return 0
+    return verticalAvg / horizontal
 }
 
 /**
@@ -124,10 +121,11 @@ export const useBlinkDetector = ({
     videoRef,
     onBlinkDetected,
     onCharacterComplete,
-    dotThreshold = 200,
-    dashThreshold = 1000,
-    charGapMs = 1000,
-    earThreshold = 0.2,
+    dotMaxMs = 350,       // 350ms以下でドット
+    dashMaxMs = 1500,     // 1500ms以下でダッシュ（それ以上は無効）
+    minBlinkMs = 80,      // 80ms以下はノイズ
+    charGapMs = 1500,     // 1.5秒入力がなければ文字確定
+    earThreshold = 0.25,  // デフォルト閾値（より寛容に）
     debug = false,
 }: UseBlinkDetectorOptions): UseBlinkDetectorReturn => {
     const [isDetecting, setIsDetecting] = useState(false)
@@ -137,12 +135,18 @@ export const useBlinkDetector = ({
     const [isCalibrating, setIsCalibrating] = useState(false)
     const [calibrationStatus, setCalibrationStatus] = useState('')
     const [dynamicThreshold, setDynamicThreshold] = useState(earThreshold)
+    const [blinkProgress, setBlinkProgress] = useState(0)
 
     const faceLandmarkerRef = useRef<FaceLandmarker | null>(null)
     const animationFrameRef = useRef<number | null>(null)
     const blinkStartTimeRef = useRef<number | null>(null)
     const lastBlinkTimeRef = useRef<number>(0)
     const detectBlinksRef = useRef<(() => void) | null>(null)
+    const hasInputRef = useRef<boolean>(false)
+
+    // EAR履歴（スムージング用）
+    const earHistoryRef = useRef<number[]>([])
+    const EAR_HISTORY_SIZE = 3
 
     const [calibrationData, setCalibrationData] = useState<number[]>([])
     const [calibrationStartTime, setCalibrationStartTime] = useState<number | null>(null)
@@ -151,6 +155,18 @@ export const useBlinkDetector = ({
     // 初期化時にlastBlinkTimeを設定
     useEffect(() => {
         lastBlinkTimeRef.current = Date.now()
+    }, [])
+
+    /**
+     * EARのスムージング（ノイズ除去）
+     */
+    const smoothEAR = useCallback((newEAR: number): number => {
+        earHistoryRef.current.push(newEAR)
+        if (earHistoryRef.current.length > EAR_HISTORY_SIZE) {
+            earHistoryRef.current.shift()
+        }
+        const sum = earHistoryRef.current.reduce((a, b) => a + b, 0)
+        return sum / earHistoryRef.current.length
     }, [])
 
     /**
@@ -186,33 +202,32 @@ export const useBlinkDetector = ({
         setIsCalibrating(false)
         setCalibrationStartTime(null)
 
-        // データの分析
-        // 外れ値を除外するためにパーセンタイルを使用
         const sorted = [...calibrationData].sort((a, b) => a - b)
-        if (sorted.length === 0) {
-            setCalibrationStatus('データ不足で失敗しました')
+        if (sorted.length < 10) {
+            setCalibrationStatus('データ不足です。もう一度試してください。')
             return
         }
 
-        // 下位10%を「閉じた状態」、上位90%を「開いた状態」とみなす
-        const lowerIndex = Math.floor(sorted.length * 0.1)
-        const upperIndex = Math.floor(sorted.length * 0.9)
+        // 下位20%を「閉じた状態」、上位80%を「開いた状態」
+        const closedIndex = Math.floor(sorted.length * 0.2)
+        const openIndex = Math.floor(sorted.length * 0.8)
 
-        const minEAR = sorted[lowerIndex] // 閉じた時の目安
-        const maxEAR = sorted[upperIndex] // 開いた時の目安
+        const closedEAR = sorted[closedIndex]
+        const openEAR = sorted[openIndex]
 
         if (debug) {
-            console.log(`📊 キャリブレーション集計: Min(10%)=${minEAR.toFixed(3)}, Max(90%)=${maxEAR.toFixed(3)}`)
+            console.log(`📊 キャリブレーション: Closed(20%)=${closedEAR.toFixed(3)}, Open(80%)=${openEAR.toFixed(3)}`)
         }
 
-        // 差が小さすぎる場合は瞬きしていないと判断
-        if (maxEAR - minEAR < 0.05) {
-            setCalibrationStatus('瞬きが検出されませんでした。もう一度試してください。')
+        // 差が小さすぎる場合
+        if (openEAR - closedEAR < 0.03) {
+            setCalibrationStatus('瞬きが検出されませんでした。大きく瞬きしてください。')
             return
         }
 
-        // 新しい閾値を設定（中間値）
-        const newThreshold = (minEAR + maxEAR) / 2
+        // 閾値 = 閉じた状態 + (差の40%)
+        // より閉じた状態に近い値を閾値にする
+        const newThreshold = closedEAR + (openEAR - closedEAR) * 0.4
         setDynamicThreshold(newThreshold)
         setCalibrationStatus(`調整完了！閾値: ${newThreshold.toFixed(3)}`)
 
@@ -241,20 +256,17 @@ export const useBlinkDetector = ({
                     const landmarks = result.faceLandmarks[0]
 
                     // 左右の目のEARを計算
-                    const leftEAR = calculateEAR(landmarks, LEFT_EYE_INDICES)
-                    const rightEAR = calculateEAR(landmarks, RIGHT_EYE_INDICES)
-                    const avgEAR = (leftEAR + rightEAR) / 2
+                    const leftEAR = calculateEAR(landmarks, LEFT_EYE)
+                    const rightEAR = calculateEAR(landmarks, RIGHT_EYE)
+                    const rawEAR = (leftEAR + rightEAR) / 2
 
+                    // スムージング
+                    const avgEAR = smoothEAR(rawEAR)
                     setCurrentEAR(avgEAR)
-
-                    // デバッグ: EAR値を定期的に表示
-                    if (debug && Math.random() < 0.05) {
-                        console.log(`👁️ EAR: ${avgEAR.toFixed(3)} (閾値: ${dynamicThreshold})`)
-                    }
 
                     const now = Date.now()
 
-                    // キャリブレーションモード（時間ベース）
+                    // キャリブレーションモード
                     if (isCalibrating && calibrationStartTime) {
                         const elapsed = now - calibrationStartTime
                         const remaining = Math.max(0, Math.ceil((CALIBRATION_DURATION - elapsed) / 1000))
@@ -263,7 +275,6 @@ export const useBlinkDetector = ({
                         setCalibrationData(prev => [...prev, avgEAR])
 
                         if (elapsed >= CALIBRATION_DURATION) {
-                            // 計測終了・集計
                             finishCalibration()
                         } else {
                             if (detectBlinksRef.current) {
@@ -273,10 +284,16 @@ export const useBlinkDetector = ({
                         }
                     }
 
-                    // キャリブレーション完了処理
+                    // 通常の瞬き検出モード
                     if (!isCalibrating) {
-                        // 通常の瞬き検出モード
-                        // 瞬き検出: EARが動的閾値以下
+                        // 瞬き中の進捗を更新
+                        if (blinkStartTimeRef.current) {
+                            setBlinkProgress(now - blinkStartTimeRef.current)
+                        } else {
+                            setBlinkProgress(0)
+                        }
+
+                        // 瞬き検出: EARが閾値以下
                         if (avgEAR < dynamicThreshold) {
                             if (!blinkStartTimeRef.current) {
                                 // 瞬き開始
@@ -290,34 +307,39 @@ export const useBlinkDetector = ({
                                 // 瞬き終了
                                 const blinkDuration = now - blinkStartTimeRef.current
                                 setIsBlinking(false)
+                                setBlinkProgress(0)
 
                                 if (debug) console.log(`瞬き終了: ${blinkDuration}ms`)
 
                                 // 瞬き時間を判定
-                                // 50ms以上1000ms未満を有効な瞬きとして認識
-                                if (blinkDuration >= 50 && blinkDuration < dashThreshold) {
-                                    const blinkType: BlinkEvent['type'] = blinkDuration < dotThreshold ? 'dot' : 'dash'
+                                if (blinkDuration >= minBlinkMs && blinkDuration <= dashMaxMs) {
+                                    const blinkType: BlinkEvent['type'] = blinkDuration <= dotMaxMs ? 'dot' : 'dash'
                                     const event: BlinkEvent = {
                                         type: blinkType,
                                         duration: blinkDuration,
                                         timestamp: now,
                                     }
 
-                                    if (debug) console.log(`✅ 瞬き検出: ${blinkType}, ${blinkDuration}ms`)
+                                    if (debug) console.log(`✅ ${blinkType === 'dot' ? '・' : '−'} (${blinkDuration}ms)`)
                                     onBlinkDetected?.(event)
                                     lastBlinkTimeRef.current = now
+                                    hasInputRef.current = true
+                                } else if (blinkDuration < minBlinkMs) {
+                                    if (debug) console.log(`❌ 短すぎ: ${blinkDuration}ms`)
                                 } else {
-                                    if (debug) console.log(`❌ 瞬き無効: ${blinkDuration}ms (範囲外)`)
+                                    if (debug) console.log(`❌ 長すぎ: ${blinkDuration}ms`)
                                 }
 
                                 blinkStartTimeRef.current = null
                             } else {
-                                // 文字確定のチェック
-                                const timeSinceLastBlink = now - lastBlinkTimeRef.current
-                                if (timeSinceLastBlink >= charGapMs && lastBlinkTimeRef.current > 0) {
-                                    if (debug) console.log('🔤 文字確定')
-                                    onCharacterComplete?.()
-                                    lastBlinkTimeRef.current = 0  // リセット
+                                // 文字確定のチェック（入力があった場合のみ）
+                                if (hasInputRef.current) {
+                                    const timeSinceLastBlink = now - lastBlinkTimeRef.current
+                                    if (timeSinceLastBlink >= charGapMs) {
+                                        if (debug) console.log('🔤 文字確定')
+                                        onCharacterComplete?.()
+                                        hasInputRef.current = false
+                                    }
                                 }
                             }
                         }
@@ -331,7 +353,7 @@ export const useBlinkDetector = ({
                 animationFrameRef.current = requestAnimationFrame(detectBlinksRef.current)
             }
         }
-    }, [videoRef, onBlinkDetected, onCharacterComplete, dotThreshold, dashThreshold, charGapMs, earThreshold, debug, isCalibrating, calibrationStartTime, dynamicThreshold, finishCalibration])
+    }, [videoRef, onBlinkDetected, onCharacterComplete, dotMaxMs, dashMaxMs, minBlinkMs, charGapMs, debug, isCalibrating, calibrationStartTime, dynamicThreshold, finishCalibration, smoothEAR])
 
     /**
      * 検出開始
@@ -339,6 +361,8 @@ export const useBlinkDetector = ({
     const start = useCallback(async () => {
         try {
             setError(null)
+            earHistoryRef.current = []
+            hasInputRef.current = false
 
             if (!faceLandmarkerRef.current) {
                 await initializeFaceLandmarker()
@@ -365,7 +389,10 @@ export const useBlinkDetector = ({
         }
         blinkStartTimeRef.current = null
         lastBlinkTimeRef.current = 0
+        hasInputRef.current = false
+        earHistoryRef.current = []
         setIsBlinking(false)
+        setBlinkProgress(0)
         setIsCalibrating(false)
         setCalibrationStartTime(null)
     }, [])
@@ -377,8 +404,8 @@ export const useBlinkDetector = ({
         setCalibrationData([])
         setCalibrationStartTime(Date.now())
         setIsCalibrating(true)
-        setCalibrationStatus('計測開始...')
-        if (debug) console.log('🎯 時間ベースキャリブレーション開始')
+        setCalibrationStatus('計測開始... 自然に瞬きしてください')
+        if (debug) console.log('🎯 キャリブレーション開始')
     }, [debug])
 
     /**
@@ -405,6 +432,7 @@ export const useBlinkDetector = ({
         startCalibration,
         calibrationStatus,
         currentThreshold: dynamicThreshold,
+        blinkProgress,
     }
 }
 
