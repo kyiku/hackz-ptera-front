@@ -22,6 +22,7 @@ const OtpPage = () => {
     const [errorMessage, setErrorMessage] = useState<string>('')
     const [attemptsRemaining, setAttemptsRemaining] = useState<number | undefined>()
     const [loadError, setLoadError] = useState<string>('')
+    const [isSuccess, setIsSuccess] = useState(false)
 
     // 問題を取得
     const fetchProblem = useCallback(async () => {
@@ -54,8 +55,11 @@ const OtpPage = () => {
             const response = await verifyOtp({ answer })
 
             if (isVerifySuccess(response)) {
-                // 成功 - 登録完了ページへ遷移
-                navigate('/register')
+                // 成功 - 正解を表示して2秒後にリダイレクト
+                setIsSuccess(true)
+                setTimeout(() => {
+                    navigate('/register')
+                }, 2000)
             } else if (isVerifyRetryableFailure(response)) {
                 // リトライ可能な失敗
                 setErrorMessage(response.message)
@@ -108,6 +112,22 @@ const OtpPage = () => {
                     >
                         再試行
                     </button>
+                </div>
+            </div>
+        )
+    }
+
+    // 正解時
+    if (isSuccess) {
+        return (
+            <div
+                data-testid="otp-page"
+                className="min-h-screen bg-gray-50 flex items-center justify-center"
+            >
+                <div className="text-center">
+                    <div className="text-6xl mb-4">🎉</div>
+                    <h1 className="text-4xl font-bold text-green-600 mb-4">正解！</h1>
+                    <p className="text-gray-600">登録画面に移動します...</p>
                 </div>
             </div>
         )
