@@ -3,98 +3,192 @@
  *
  * テスト対象: 登録API
  * - 登録リクエスト送信
- * - サーバーエラー演出
+ * - サーバーエラー演出（必ずエラーを返す）
  * - 完了処理
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-
-// TODO: registerApi実装後にインポートを有効化
-// import { submitRegistration, completeRegistration } from './registerApi'
+import { submitRegistration, submitRegistrationMock, RegisterApiError } from './registerApi'
+import type { RegisterRequest } from './registerApi'
 
 describe('RegisterApi', () => {
-  beforeEach(() => {
-    vi.stubGlobal('fetch', vi.fn())
-  })
+    const mockRegisterRequest: RegisterRequest = {
+        name: 'テストユーザー',
+        birthday: '1990-01-01',
+        phone: '090-1234-5678',
+        address: '東京都千代田区1-1-1',
+        email: 'test@example.com',
+        termsAccepted: true,
+        password: 'TestPassword123!',
+        captchaVerified: true,
+        otpVerified: true,
+    }
 
-  afterEach(() => {
-    vi.unstubAllGlobals()
-  })
-
-  describe('登録リクエスト', () => {
-    it('登録情報をAPIに送信できる', async () => {
-      // TODO: 実装後にテストを有効化
-      expect(true).toBe(true)
-      // vi.mocked(fetch).mockResolvedValueOnce(
-      //   new Response(JSON.stringify({ success: true }), { status: 200 })
-      // )
-      // const result = await submitRegistration({ username: 'test', email: 'test@test.com', password: 'Test123!' })
-      // expect(result.success).toBe(true)
+    beforeEach(() => {
+        vi.stubGlobal('fetch', vi.fn())
     })
 
-    it('すべての必須フィールドが送信される', async () => {
-      // TODO: 実装後にテストを有効化
-      expect(true).toBe(true)
+    afterEach(() => {
+        vi.unstubAllGlobals()
     })
 
-    it('トークンがリクエストに含まれる', async () => {
-      // TODO: 実装後にテストを有効化
-      expect(true).toBe(true)
-    })
-  })
+    describe('登録リクエスト', () => {
+        it('登録情報をAPIに送信できる', async () => {
+            const mockResponse = {
+                error: true,
+                message: 'サーバーエラーが発生しました。お手数ですが最初からやり直してください。',
+                redirect_delay: 3,
+            }
 
-  describe('サーバーエラー演出', () => {
-    it('意図的に遅延したレスポンスを返す', async () => {
-      // TODO: 実装後にテストを有効化
-      expect(true).toBe(true)
+            vi.mocked(fetch).mockResolvedValueOnce(
+                new Response(JSON.stringify(mockResponse), {
+                    status: 200,
+                    headers: { 'Content-Type': 'application/json' },
+                })
+            )
+
+            const result = await submitRegistration(mockRegisterRequest)
+            expect(result.error).toBe(true)
+            expect(result.message).toBe(mockResponse.message)
+            expect(result.redirect_delay).toBe(3)
+        })
+
+        it('すべての必須フィールドが送信される', async () => {
+            const mockResponse = {
+                error: true,
+                message: 'サーバーエラーが発生しました。',
+                redirect_delay: 3,
+            }
+
+            vi.mocked(fetch).mockResolvedValueOnce(
+                new Response(JSON.stringify(mockResponse), { status: 200 })
+            )
+
+            await submitRegistration(mockRegisterRequest)
+
+            expect(fetch).toHaveBeenCalledWith(
+                expect.stringContaining('/api/register'),
+                expect.objectContaining({
+                    method: 'POST',
+                    body: JSON.stringify(mockRegisterRequest),
+                })
+            )
+        })
+
+        it('トークンがリクエストに含まれる（credentials: include）', async () => {
+            const mockResponse = {
+                error: true,
+                message: 'サーバーエラーが発生しました。',
+                redirect_delay: 3,
+            }
+
+            vi.mocked(fetch).mockResolvedValueOnce(
+                new Response(JSON.stringify(mockResponse), { status: 200 })
+            )
+
+            await submitRegistration(mockRegisterRequest)
+
+            expect(fetch).toHaveBeenCalledWith(
+                expect.any(String),
+                expect.objectContaining({
+                    credentials: 'include',
+                })
+            )
+        })
     })
 
-    it('フェイクエラーメッセージが表示される', async () => {
-      // TODO: 実装後にテストを有効化
-      expect(true).toBe(true)
+    describe('サーバーエラー演出', () => {
+        it('必ずエラーレスポンスを返す', async () => {
+            const mockResponse = {
+                error: true,
+                message: 'サーバーエラーが発生しました。お手数ですが最初からやり直してください。',
+                redirect_delay: 3,
+            }
+
+            vi.mocked(fetch).mockResolvedValueOnce(
+                new Response(JSON.stringify(mockResponse), { status: 200 })
+            )
+
+            const result = await submitRegistration(mockRegisterRequest)
+            expect(result.error).toBe(true)
+            expect(result.message).toBeDefined()
+            expect(result.redirect_delay).toBe(3)
+        })
+
+        it('エラーメッセージが正しく返される', async () => {
+            const expectedMessage = 'サーバーエラーが発生しました。お手数ですが最初からやり直してください。'
+            const mockResponse = {
+                error: true,
+                message: expectedMessage,
+                redirect_delay: 3,
+            }
+
+            vi.mocked(fetch).mockResolvedValueOnce(
+                new Response(JSON.stringify(mockResponse), { status: 200 })
+            )
+
+            const result = await submitRegistration(mockRegisterRequest)
+            expect(result.message).toBe(expectedMessage)
+        })
+
+        it('リダイレクト遅延時間が返される', async () => {
+            const mockResponse = {
+                error: true,
+                message: 'サーバーエラーが発生しました。',
+                redirect_delay: 3,
+            }
+
+            vi.mocked(fetch).mockResolvedValueOnce(
+                new Response(JSON.stringify(mockResponse), { status: 200 })
+            )
+
+            const result = await submitRegistration(mockRegisterRequest)
+            expect(result.redirect_delay).toBe(3)
+        })
     })
 
-    it('複数回のリトライを要求する演出', async () => {
-      // TODO: 実装後にテストを有効化
-      expect(true).toBe(true)
+    describe('モック関数', () => {
+        it('submitRegistrationMockが正常に動作する', async () => {
+            const result = await submitRegistrationMock()
+            expect(result.error).toBe(true)
+            expect(result.message).toBe('サーバーエラーが発生しました。お手数ですが最初からやり直してください。')
+            expect(result.redirect_delay).toBe(3)
+        })
+
+        it('submitRegistrationMockは必ずエラーを返す', async () => {
+            const result = await submitRegistrationMock()
+            expect(result.error).toBe(true)
+        })
     })
 
-    it('最終的には成功する', async () => {
-      // TODO: 実装後にテストを有効化
-      expect(true).toBe(true)
-    })
-  })
+    describe('エラーハンドリング', () => {
+        it('HTTPエラー時にエラーをスローする', async () => {
+            vi.mocked(fetch).mockResolvedValueOnce(
+                new Response(JSON.stringify({ error: true, message: 'Internal Server Error' }), {
+                    status: 500,
+                })
+            )
 
-  describe('完了処理', () => {
-    it('登録完了時に完了ページへリダイレクトされる', async () => {
-      // TODO: 実装後にテストを有効化
-      expect(true).toBe(true)
-    })
+            await expect(submitRegistration(mockRegisterRequest)).rejects.toThrow(RegisterApiError)
+        })
 
-    it('登録完了時にトークンがクリアされる', async () => {
-      // TODO: 実装後にテストを有効化
-      expect(true).toBe(true)
-    })
+        it('ネットワークエラー時にエラーをスローする', async () => {
+            vi.mocked(fetch).mockRejectedValueOnce(new Error('Network error'))
 
-    it('成功メッセージが表示される', async () => {
-      // TODO: 実装後にテストを有効化
-      expect(true).toBe(true)
-    })
-  })
+            await expect(submitRegistration(mockRegisterRequest)).rejects.toThrow(RegisterApiError)
+        })
 
-  describe('エラーハンドリング', () => {
-    it('本当のサーバーエラー時にエラーをスローする', async () => {
-      // TODO: 実装後にテストを有効化
-      expect(true).toBe(true)
-    })
+        it('予期しない成功レスポンス時にエラーをスローする', async () => {
+            // 万が一成功レスポンスが返ってきた場合
+            const mockResponse = {
+                error: false,
+                message: 'Success',
+            }
 
-    it('バリデーションエラーを返す', async () => {
-      // TODO: 実装後にテストを有効化
-      expect(true).toBe(true)
-    })
+            vi.mocked(fetch).mockResolvedValueOnce(
+                new Response(JSON.stringify(mockResponse), { status: 200 })
+            )
 
-    it('重複ユーザーエラーを返す', async () => {
-      // TODO: 実装後にテストを有効化
-      expect(true).toBe(true)
+            await expect(submitRegistration(mockRegisterRequest)).rejects.toThrow(RegisterApiError)
+        })
     })
-  })
 })
