@@ -32,13 +32,18 @@ export type GameResultResponse = GameResultSuccessResponse | GameResultFailureRe
 
 // API エラー
 export class DinoApiError extends Error {
+    statusCode?: number
+    response?: unknown
+
     constructor(
         message: string,
-        public statusCode?: number,
-        public response?: unknown
+        statusCode?: number,
+        response?: unknown
     ) {
         super(message)
         this.name = 'DinoApiError'
+        this.statusCode = statusCode
+        this.response = response
     }
 }
 
