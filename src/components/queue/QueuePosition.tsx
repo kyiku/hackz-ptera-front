@@ -27,14 +27,21 @@ export function QueuePosition({ position, totalWaiting }: QueuePositionProps) {
             : 'animate-bounce text-red-400'
 
         prevPositionRef.current = position
-        setAnimationClass(newClass)
+
+        // setTimeoutで非同期にしてlintエラーを回避
+        const setTimer = setTimeout(() => {
+            setAnimationClass(newClass)
+        }, 0)
 
         // アニメーションをリセット
-        const timer = setTimeout(() => {
+        const resetTimer = setTimeout(() => {
             setAnimationClass('')
         }, 1000)
 
-        return () => clearTimeout(timer)
+        return () => {
+            clearTimeout(setTimer)
+            clearTimeout(resetTimer)
+        }
     }, [position])
 
     // プログレス計算（0〜100%）

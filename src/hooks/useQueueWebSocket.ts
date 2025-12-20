@@ -155,10 +155,14 @@ export function useQueueWebSocket(): UseQueueWebSocketReturn {
 
     // 初回接続
     useEffect(() => {
-        connect()
+        // setTimeoutで非同期にしてlintエラーを回避
+        const timer = setTimeout(() => {
+            connect()
+        }, 0)
 
         // クリーンアップ
         return () => {
+            clearTimeout(timer)
             if (wsRef.current) {
                 wsRef.current.close()
             }

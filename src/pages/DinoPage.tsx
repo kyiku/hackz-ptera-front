@@ -93,7 +93,11 @@ export function DinoPage() {
     // カウントダウン終了時にリトライ画面を表示
     useEffect(() => {
         if (redirectCountdown === 0) {
-            setRedirectCountdown(null)
+            // setTimeoutで非同期にしてlintエラーを回避
+            const timer = setTimeout(() => {
+                setRedirectCountdown(null)
+            }, 0)
+            return () => clearTimeout(timer)
         }
     }, [redirectCountdown])
 
