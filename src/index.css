@@ -100,3 +100,112 @@ body {
 .animate-shake {
   animation: shake 0.6s ease-in-out;
 }
+
+/* スロットマシンのリール回転アニメーション */
+@keyframes slot-spin {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-100%);
+  }
+}
+
+.slot-reel {
+  animation: slot-spin 0.1s linear infinite;
+}
+
+/* スロットマシンの光る演出 */
+@keyframes slot-glow {
+  0%, 100% {
+    box-shadow: 0 0 5px #ffd700, 0 0 10px #ffd700, 0 0 15px #ffd700, 0 0 20px #ffd700;
+  }
+  50% {
+    box-shadow: 0 0 10px #ffd700, 0 0 20px #ffd700, 0 0 30px #ffd700, 0 0 40px #ffd700;
+  }
+}
+
+.slot-spinning {
+  animation: slot-glow 0.5s ease-in-out infinite;
+}
+
+/* スロットマシンの停止時の光る演出 */
+@keyframes slot-stop-glow {
+  0%, 100% {
+    box-shadow: 0 0 10px #ff0000, 0 0 20px #ff0000;
+  }
+  50% {
+    box-shadow: 0 0 20px #ff0000, 0 0 40px #ff0000;
+  }
+}
+
+.slot-stopped {
+  animation: slot-stop-glow 0.3s ease-in-out;
+}
+
+/* シンプルなスロットマシンアニメーション */
+
+/* リール回転アニメーション（通常速度） */
+@keyframes reel-spin {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-100%);
+  }
+}
+
+.reel-spinning {
+  animation: reel-spin 0.2s linear infinite;
+}
+
+/* リール減速アニメーション（ゆっくり止まる） */
+@keyframes reel-slowdown {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-100%);
+  }
+}
+
+.reel-slowing-down {
+  animation: reel-slowdown 0.3s ease-out infinite;
+}
+
+/* ネオンライト効果 */
+@keyframes neon-flicker {
+  0%, 100% {
+    opacity: 1;
+    filter: brightness(1);
+  }
+  50% {
+    opacity: 0.8;
+    filter: brightness(1.2);
+  }
+}
+
+.neon-light {
+  animation: neon-flicker 2s ease-in-out infinite;
+  text-shadow: 
+    0 0 5px currentColor,
+    0 0 10px currentColor,
+    0 0 15px currentColor,
+    0 0 20px currentColor,
+    0 0 35px currentColor,
+    0 0 40px currentColor;
+}
+
+/* リールの縦スクロール効果 */
+@keyframes reel-scroll {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-200%);
+  }
+}
+
+.reel-container {
+  animation: reel-scroll 0.05s linear infinite;
+}
