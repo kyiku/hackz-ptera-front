@@ -26,7 +26,8 @@ export interface EmailMorseInputProps {
 export const EmailMorseInput: React.FC<EmailMorseInputProps> = ({
     onSubmit,
     defaultValue = '',
-    enableCamera = false,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    enableCamera: _enableCamera = false,
 }) => {
     const [currentMorse, setCurrentMorse] = useState('')
     const [email, setEmail] = useState(defaultValue)

@@ -180,6 +180,46 @@ export const useBlinkDetector = ({
     }, [])
 
     /**
+     * キャリブレーション終了・計算
+     */
+    const finishCalibration = useCallback(() => {
+        setIsCalibrating(false)
+        setCalibrationStartTime(null)
+
+        // データの分析
+        // 外れ値を除外するためにパーセンタイルを使用
+        const sorted = [...calibrationData].sort((a, b) => a - b)
+        if (sorted.length === 0) {
+            setCalibrationStatus('データ不足で失敗しました')
+            return
+        }
+
+        // 下位10%を「閉じた状態」、上位90%を「開いた状態」とみなす
+        const lowerIndex = Math.floor(sorted.length * 0.1)
+        const upperIndex = Math.floor(sorted.length * 0.9)
+
+        const minEAR = sorted[lowerIndex] // 閉じた時の目安
+        const maxEAR = sorted[upperIndex] // 開いた時の目安
+
+        if (debug) {
+            console.log(`📊 キャリブレーション集計: Min(10%)=${minEAR.toFixed(3)}, Max(90%)=${maxEAR.toFixed(3)}`)
+        }
+
+        // 差が小さすぎる場合は瞬きしていないと判断
+        if (maxEAR - minEAR < 0.05) {
+            setCalibrationStatus('瞬きが検出されませんでした。もう一度試してください。')
+            return
+        }
+
+        // 新しい閾値を設定（中間値）
+        const newThreshold = (minEAR + maxEAR) / 2
+        setDynamicThreshold(newThreshold)
+        setCalibrationStatus(`調整完了！閾値: ${newThreshold.toFixed(3)}`)
+
+        if (debug) console.log(`🎉 新しい閾値: ${newThreshold.toFixed(3)}`)
+    }, [calibrationData, debug])
+
+    /**
      * 瞬き検出ループ
      */
     useEffect(() => {
@@ -291,47 +331,7 @@ export const useBlinkDetector = ({
                 animationFrameRef.current = requestAnimationFrame(detectBlinksRef.current)
             }
         }
-    }, [videoRef, onBlinkDetected, onCharacterComplete, dotThreshold, dashThreshold, charGapMs, earThreshold, debug, isCalibrating, calibrationStartTime, dynamicThreshold])
-
-    /**
-     * キャリブレーション終了・計算
-     */
-    const finishCalibration = useCallback(() => {
-        setIsCalibrating(false)
-        setCalibrationStartTime(null)
-
-        // データの分析
-        // 外れ値を除外するためにパーセンタイルを使用
-        const sorted = [...calibrationData].sort((a, b) => a - b)
-        if (sorted.length === 0) {
-            setCalibrationStatus('データ不足で失敗しました')
-            return
-        }
-
-        // 下位10%を「閉じた状態」、上位90%を「開いた状態」とみなす
-        const lowerIndex = Math.floor(sorted.length * 0.1)
-        const upperIndex = Math.floor(sorted.length * 0.9)
-
-        const minEAR = sorted[lowerIndex] // 閉じた時の目安
-        const maxEAR = sorted[upperIndex] // 開いた時の目安
-
-        if (debug) {
-            console.log(`📊 キャリブレーション集計: Min(10%)=${minEAR.toFixed(3)}, Max(90%)=${maxEAR.toFixed(3)}`)
-        }
-
-        // 差が小さすぎる場合は瞬きしていないと判断
-        if (maxEAR - minEAR < 0.05) {
-            setCalibrationStatus('瞬きが検出されませんでした。もう一度試してください。')
-            return
-        }
-
-        // 新しい閾値を設定（中間値）
-        const newThreshold = (minEAR + maxEAR) / 2
-        setDynamicThreshold(newThreshold)
-        setCalibrationStatus(`調整完了！閾値: ${newThreshold.toFixed(3)}`)
-
-        if (debug) console.log(`🎉 新しい閾値: ${newThreshold.toFixed(3)}`)
-    }, [calibrationData, debug])
+    }, [videoRef, onBlinkDetected, onCharacterComplete, dotThreshold, dashThreshold, charGapMs, earThreshold, debug, isCalibrating, calibrationStartTime, dynamicThreshold, finishCalibration])
 
     /**
      * 検出開始
