@@ -17,13 +17,15 @@ const RegisterAddressPage = () => {
     const navigate = useNavigate()
     const { formData, completeTask } = useRegistrationStore()
 
-    // 住所選択時のハンドラ
-    const handleAddressChange = useCallback(
+    // 住所確定時のハンドラ
+    const handleAddressConfirm = useCallback(
         (address: string) => {
             // フォームデータを更新してタスクを完了
             completeTask('address', { address })
+            // ダッシュボードに戻る
+            navigate('/register')
         },
-        [completeTask]
+        [completeTask, navigate]
     )
 
     // 戻るボタン（ダッシュボードへ）
@@ -42,7 +44,7 @@ const RegisterAddressPage = () => {
                 {/* ストリートビュー風ナビゲーション */}
                 <StreetViewNavigation
                     value={formData.address}
-                    onChange={handleAddressChange}
+                    onConfirm={handleAddressConfirm}
                 />
 
                 {/* 戻るボタン */}

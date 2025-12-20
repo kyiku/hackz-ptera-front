@@ -4,7 +4,7 @@
 
 // ゲーム時間の定数
 export const GAME_DURATION = 180  // 3分 = 180秒
-export const TARGET_SCORE = 3000  // 目標スコア
+export const TARGET_SCORE = 1000  // 目標スコア
 
 /**
  * 数値を5桁のゼロパディング文字列に変換

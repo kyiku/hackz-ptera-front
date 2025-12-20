@@ -75,26 +75,39 @@ export function DinoPage() {
         setGameState('submitting')
         setApiError(null)
 
+        // クリア時はフロントエンドで即座に成功扱い（APIレスポンスに依存しない）
+        if (cleared) {
+            setGameState('success')
+            setApiMessage('ゲームクリア！次のステージへ進みます。')
+            setStatus('registering')
+            setTimeout(() => {
+                navigate('/register')
+            }, 2000)
+
+            // APIには結果を送信（バックグラウンド、エラーは無視）
+            submitGameResult({
+                result: 'clear',
+                score: scoreRef.current,
+            }).catch(() => {})
+            return
+        }
+
+        // ゲームオーバー時は従来通りAPI結果に従う
         try {
             const response: GameResultResponse = await submitGameResult({
-                result: cleared ? 'clear' : 'gameover',
+                result: 'gameover',
                 score: scoreRef.current,
             })
 
             setApiMessage(response.message)
 
-            if (!response.error) {
-                // 成功: ステータスを registering に更新して次ステージへ遷移
-                setStatus('registering')
-                setGameState('success')
-                setTimeout(() => {
-                    navigate(`/${response.next_stage}`)
-                }, 2000)
-            } else {
-                // 失敗: セッションをリセットしてリダイレクトカウントダウン開始
-                resetSession()
-                setGameState('gameover')
+            // 失敗: セッションをリセットしてリダイレクトカウントダウン開始
+            resetSession()
+            setGameState('gameover')
+            if ('redirect_delay' in response) {
                 setRedirectCountdown(response.redirect_delay)
+            } else {
+                setRedirectCountdown(3)
             }
         } catch (error) {
             setApiError(error instanceof Error ? error.message : 'API送信に失敗しました')
