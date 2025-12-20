@@ -5,11 +5,11 @@
  * 機能:
  * - 利用規約テキストを表示
  * - ユーザーが音声で読み上げ
- * - 音声認識で内容を検証
- * - 間違えたらやり直し
+ * - リアルタイムで内容を検証
+ * - 間違えたら最初からやり直し
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 
 export interface VoiceRecognitionTermsProps {
     /** 利用規約テキスト */
@@ -25,7 +25,17 @@ export interface VoiceRecognitionTermsProps {
 /**
  * 音声認識の状態
  */
-type RecognitionState = 'idle' | 'listening' | 'processing' | 'success' | 'error'
+type RecognitionState = 'idle' | 'listening' | 'success' | 'error'
+
+/**
+ * テキストを正規化（比較用）
+ */
+function normalizeText(text: string): string {
+    return text
+        .replace(/\s+/g, '')
+        .replace(/[。、！？「」（）『』【】・]/g, '')
+        .toLowerCase()
+}
 
 /**
  * 音声認識読み上げコンポーネント
@@ -37,9 +47,13 @@ export const VoiceRecognitionTerms = ({
     className = '',
 }: VoiceRecognitionTermsProps) => {
     const [state, setState] = useState<RecognitionState>('idle')
-    const [transcript, setTranscript] = useState('')
+    const [accumulatedTranscript, setAccumulatedTranscript] = useState('')
     const [error, setError] = useState<string | null>(null)
+    const [progress, setProgress] = useState(0)
     const recognitionRef = useRef<SpeechRecognition | null>(null)
+
+    // 正規化された利用規約テキスト
+    const normalizedTerms = useMemo(() => normalizeText(termsText), [termsText])
 
     // 音声認識の初期化
     useEffect(() => {
@@ -49,7 +63,6 @@ export const VoiceRecognitionTerms = ({
             window.SpeechRecognition || (window as { webkitSpeechRecognition?: new () => SpeechRecognition }).webkitSpeechRecognition
 
         if (!SpeechRecognitionConstructor) {
-            // ブラウザ非対応の場合はエラーを設定（初期化時のみ）
             const timer = setTimeout(() => {
                 setError('お使いのブラウザは音声認識に対応していません')
             }, 0)
@@ -67,31 +80,29 @@ export const VoiceRecognitionTerms = ({
         }
 
         recognition.onresult = (event: SpeechRecognitionEvent) => {
-            let interimTranscript = ''
-            let finalTranscript = ''
+            let fullTranscript = ''
 
-            for (let i = event.resultIndex; i < event.results.length; i++) {
-                const transcript = event.results[i][0].transcript
-                if (event.results[i].isFinal) {
-                    finalTranscript += transcript
-                } else {
-                    interimTranscript += transcript
-                }
+            for (let i = 0; i < event.results.length; i++) {
+                fullTranscript += event.results[i][0].transcript
             }
 
-            setTranscript(finalTranscript || interimTranscript)
+            setAccumulatedTranscript(fullTranscript)
         }
 
         recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-            setState('error')
-            setError(`音声認識エラー: ${event.error}`)
+            if (event.error !== 'no-speech') {
+                setState('error')
+                setError(`音声認識エラー: ${event.error}`)
+            }
         }
 
         recognition.onend = () => {
-            if (state === 'listening') {
-                // 自動的に再開（continuous mode）
-                if (!disabled) {
+            // listening状態でエラーでなければ再開
+            if (state === 'listening' && !disabled) {
+                try {
                     recognition.start()
+                } catch {
+                    // 既に開始されている場合は無視
                 }
             }
         }
@@ -105,6 +116,39 @@ export const VoiceRecognitionTerms = ({
         }
     }, [disabled, state])
 
+    // リアルタイム検証
+    useEffect(() => {
+        if (state !== 'listening' || !accumulatedTranscript) return
+
+        const normalizedTranscript = normalizeText(accumulatedTranscript)
+        if (normalizedTranscript.length === 0) return
+
+        // 先頭一致チェック
+        if (!normalizedTerms.startsWith(normalizedTranscript)) {
+            setState('error')
+            setError('読み上げ内容が利用規約と一致しません。最初からやり直してください。')
+            if (recognitionRef.current) {
+                recognitionRef.current.stop()
+            }
+            return
+        }
+
+        // 進捗更新
+        const newProgress = normalizedTranscript.length / normalizedTerms.length
+        setProgress(newProgress)
+
+        // 完全一致で成功
+        if (normalizedTranscript === normalizedTerms) {
+            setState('success')
+            if (recognitionRef.current) {
+                recognitionRef.current.stop()
+            }
+            setTimeout(() => {
+                onVerified()
+            }, 1000)
+        }
+    }, [accumulatedTranscript, normalizedTerms, state, onVerified])
+
     // 音声認識開始
     const handleStart = useCallback(() => {
         if (disabled || !recognitionRef.current) return
@@ -112,7 +156,8 @@ export const VoiceRecognitionTerms = ({
         try {
             recognitionRef.current.start()
             setState('listening')
-            setTranscript('')
+            setAccumulatedTranscript('')
+            setProgress(0)
             setError(null)
         } catch {
             setError('音声認識を開始できませんでした')
@@ -120,85 +165,88 @@ export const VoiceRecognitionTerms = ({
         }
     }, [disabled])
 
-    // 音声認識停止
-    const handleStop = useCallback(() => {
-        if (!recognitionRef.current) return
-
-        recognitionRef.current.stop()
-        setState('idle')
-    }, [])
-
-    // 検証
-    const handleVerify = useCallback(() => {
-        if (!transcript.trim()) {
-            setError('読み上げ内容が空です')
-            return
-        }
-
-        setState('processing')
-
-        // 簡易的な検証（実際の実装では、より詳細な検証が必要）
-        // 利用規約テキストと読み上げ内容を比較
-        const normalizedTerms = termsText
-            .replace(/\s+/g, '')
-            .replace(/[。、]/g, '')
-            .toLowerCase()
-        const normalizedTranscript = transcript
-            .replace(/\s+/g, '')
-            .replace(/[。、]/g, '')
-            .toLowerCase()
-
-        // 類似度を計算（簡易版）
-        const similarity = calculateSimilarity(normalizedTerms, normalizedTranscript)
-
-        // 80%以上の類似度で成功とみなす
-        if (similarity >= 0.8) {
-            setState('success')
-            setTimeout(() => {
-                onVerified()
-            }, 1000)
-        } else {
-            setState('error')
-            setError(
-                `読み上げ内容が正しくありません。類似度: ${Math.round(similarity * 100)}%。もう一度読み上げてください。`
-            )
-        }
-    }, [transcript, termsText, onVerified])
-
-    // リセット
+    // リセット（最初からやり直し）
     const handleReset = useCallback(() => {
         if (recognitionRef.current) {
             recognitionRef.current.stop()
         }
         setState('idle')
-        setTranscript('')
+        setAccumulatedTranscript('')
+        setProgress(0)
         setError(null)
     }, [])
 
+    // 読み上げ済みの文字数を計算
+    const matchedCharCount = useMemo(() => {
+        const normalizedTranscript = normalizeText(accumulatedTranscript)
+        if (!normalizedTerms.startsWith(normalizedTranscript)) return 0
+
+        // 正規化された文字数から元のテキストの位置を推定
+        let normalizedIndex = 0
+        let originalIndex = 0
+
+        while (normalizedIndex < normalizedTranscript.length && originalIndex < termsText.length) {
+            const originalChar = termsText[originalIndex]
+            const normalizedOriginalChar = normalizeText(originalChar)
+
+            if (normalizedOriginalChar.length === 0) {
+                // スキップされる文字（空白、句読点など）
+                originalIndex++
+            } else if (normalizedOriginalChar === normalizedTranscript[normalizedIndex]) {
+                normalizedIndex++
+                originalIndex++
+            } else {
+                break
+            }
+        }
+
+        return originalIndex
+    }, [accumulatedTranscript, termsText, normalizedTerms])
+
     return (
         <div className={`${className}`} data-testid="voice-recognition-terms">
-            {/* 利用規約テキスト */}
-            <div className="bg-gray-100 border border-gray-300 rounded-lg p-6 mb-6 max-h-64 overflow-y-auto">
+            {/* 進捗バー */}
+            {state === 'listening' && (
+                <div className="mb-4">
+                    <div className="flex justify-between text-sm text-gray-600 mb-1">
+                        <span>進捗</span>
+                        <span>{Math.round(progress * 100)}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-3">
+                        <div
+                            className="bg-green-500 h-3 rounded-full transition-all duration-300"
+                            style={{ width: `${progress * 100}%` }}
+                        />
+                    </div>
+                </div>
+            )}
+
+            {/* 利用規約テキスト（ハイライト付き） */}
+            <div className="bg-gray-100 border border-gray-300 rounded-lg p-6 mb-6 max-h-96 overflow-y-auto">
                 <h2 className="text-xl font-medium text-gray-800 mb-4">利用規約</h2>
-                <p className="text-gray-600 whitespace-pre-wrap">{termsText}</p>
+                <p className="whitespace-pre-wrap leading-relaxed">
+                    <span className="text-green-600 font-medium">
+                        {termsText.slice(0, matchedCharCount)}
+                    </span>
+                    <span className="text-gray-600">
+                        {termsText.slice(matchedCharCount)}
+                    </span>
+                </p>
             </div>
 
             {/* 状態表示 */}
             <div className="text-center mb-6">
                 {state === 'idle' && (
-                    <p className="text-gray-500">「読み上げ開始」ボタンを押して、利用規約を読み上げてください</p>
+                    <p className="text-gray-500">「読み上げ開始」ボタンを押して、利用規約を最初から読み上げてください</p>
                 )}
                 {state === 'listening' && (
                     <div>
                         <div className="inline-block w-4 h-4 bg-red-500 rounded-full animate-pulse mr-2"></div>
-                        <p className="text-red-600 inline">音声認識中...</p>
+                        <span className="text-red-600">音声認識中... リアルタイムで検証しています</span>
                     </div>
                 )}
-                {state === 'processing' && (
-                    <p className="text-gray-600">検証中...</p>
-                )}
                 {state === 'success' && (
-                    <p className="text-green-600">検証成功！</p>
+                    <p className="text-green-600 text-xl font-medium">読み上げ完了！検証成功！</p>
                 )}
                 {state === 'error' && error && (
                     <p className="text-red-600">{error}</p>
@@ -206,10 +254,10 @@ export const VoiceRecognitionTerms = ({
             </div>
 
             {/* 読み上げ内容表示 */}
-            {transcript && (
-                <div className="bg-gray-100 border border-gray-300 rounded-lg p-4 mb-6">
-                    <h3 className="text-lg font-medium text-gray-800 mb-2">読み上げ内容</h3>
-                    <p className="text-gray-600">{transcript}</p>
+            {accumulatedTranscript && state === 'listening' && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                    <h3 className="text-sm font-medium text-blue-800 mb-2">認識中のテキスト</h3>
+                    <p className="text-blue-700">{accumulatedTranscript}</p>
                 </div>
             )}
 
@@ -232,39 +280,8 @@ export const VoiceRecognitionTerms = ({
                 )}
 
                 {state === 'listening' && (
-                    <>
-                        <button
-                            data-testid="stop-button"
-                            onClick={handleStop}
-                            disabled={disabled}
-                            className={`
-                                px-8 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg
-                                transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500
-                                ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-                            `}
-                            type="button"
-                        >
-                            読み上げ停止
-                        </button>
-                        <button
-                            data-testid="verify-button"
-                            onClick={handleVerify}
-                            disabled={disabled || !transcript.trim()}
-                            className={`
-                                px-8 py-3 bg-white border-2 border-gray-800 text-gray-800 hover:bg-gray-800 hover:text-white rounded-lg
-                                transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500
-                                ${disabled || !transcript.trim() ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-                            `}
-                            type="button"
-                        >
-                            検証
-                        </button>
-                    </>
-                )}
-
-                {(state === 'error' || state === 'success') && (
                     <button
-                        data-testid="reset-button"
+                        data-testid="stop-button"
                         onClick={handleReset}
                         disabled={disabled}
                         className={`
@@ -274,49 +291,28 @@ export const VoiceRecognitionTerms = ({
                         `}
                         type="button"
                     >
-                        やり直す
+                        中止してやり直す
+                    </button>
+                )}
+
+                {state === 'error' && (
+                    <button
+                        data-testid="reset-button"
+                        onClick={handleReset}
+                        disabled={disabled}
+                        className={`
+                            px-8 py-3 bg-white border-2 border-gray-800 text-gray-800 hover:bg-gray-800 hover:text-white rounded-lg
+                            transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500
+                            ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                        `}
+                        type="button"
+                    >
+                        最初からやり直す
                     </button>
                 )}
             </div>
         </div>
     )
-}
-
-/**
- * 文字列の類似度を計算（簡易版）
- */
-function calculateSimilarity(str1: string, str2: string): number {
-    if (str1.length === 0 && str2.length === 0) return 1
-    if (str1.length === 0 || str2.length === 0) return 0
-
-    // 最長共通部分列（LCS）の長さを計算
-    const lcs = longestCommonSubsequence(str1, str2)
-    const maxLength = Math.max(str1.length, str2.length)
-
-    return lcs / maxLength
-}
-
-/**
- * 最長共通部分列（LCS）の長さを計算
- */
-function longestCommonSubsequence(str1: string, str2: string): number {
-    const m = str1.length
-    const n = str2.length
-    const dp: number[][] = Array(m + 1)
-        .fill(null)
-        .map(() => Array(n + 1).fill(0))
-
-    for (let i = 1; i <= m; i++) {
-        for (let j = 1; j <= n; j++) {
-            if (str1[i - 1] === str2[j - 1]) {
-                dp[i][j] = dp[i - 1][j - 1] + 1
-            } else {
-                dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1])
-            }
-        }
-    }
-
-    return dp[m][n]
 }
 
 // 型定義
