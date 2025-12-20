@@ -75,13 +75,13 @@ export function CaptchaTimer({
     // 色の決定
     const getColorClass = () => {
         if (isCritical) return 'text-red-500'
-        if (isWarning) return 'text-yellow-500'
-        return 'text-green-500'
+        if (isWarning) return 'text-amber-500'
+        return 'text-green-600'
     }
 
     const getProgressColorClass = () => {
         if (isCritical) return 'bg-red-500'
-        if (isWarning) return 'bg-yellow-500'
+        if (isWarning) return 'bg-amber-500'
         return 'bg-green-500'
     }
 
@@ -91,11 +91,11 @@ export function CaptchaTimer({
                 data-testid="captcha-timer"
                 className={`
           inline-flex items-center gap-2 px-3 py-1 rounded-full
-          bg-gray-800 border border-gray-700
+          bg-gray-100 border border-gray-200
           ${isCritical ? 'animate-pulse' : ''}
         `}
             >
-                <span className="text-gray-400 text-xs">⏱</span>
+                <span className="text-gray-500 text-xs">⏱</span>
                 <span className={`font-mono font-bold ${getColorClass()}`}>
                     {formatTime(remainingTime)}
                 </span>
@@ -107,16 +107,16 @@ export function CaptchaTimer({
         <div
             data-testid="captcha-timer"
             className={`
-        bg-gray-800/80 border border-gray-700 rounded-lg p-4
-        ${isCritical ? 'animate-pulse border-red-500/50' : ''}
+        bg-gray-100 border border-gray-200 rounded-lg p-4
+        ${isCritical ? 'animate-pulse border-red-300' : ''}
       `}
         >
             {/* タイマー表示 */}
             <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                    <span className="text-gray-400 text-sm">⏱ 残り時間</span>
+                    <span className="text-gray-500 text-sm">⏱ 残り時間</span>
                     {isPaused && (
-                        <span className="text-yellow-500 text-xs bg-yellow-500/20 px-2 py-0.5 rounded">
+                        <span className="text-amber-600 text-xs bg-amber-100 px-2 py-0.5 rounded">
                             一時停止中
                         </span>
                     )}
@@ -130,7 +130,7 @@ export function CaptchaTimer({
 
             {/* プログレスバー */}
             {showProgressBar && (
-                <div className="w-full h-2 bg-gray-700 rounded-full overflow-hidden">
+                <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
                     <div
                         className={`h-full transition-all duration-1000 ease-linear ${getProgressColorClass()}`}
                         style={{ width: `${progressPercent}%` }}
@@ -140,20 +140,20 @@ export function CaptchaTimer({
 
             {/* 警告メッセージ */}
             {isWarning && !isCritical && (
-                <p className="text-yellow-500 text-xs mt-2 text-center">
-                    ⚠ 残り時間が少なくなっています
+                <p className="text-amber-600 text-xs mt-2 text-center">
+                    残り時間が少なくなっています
                 </p>
             )}
             {isCritical && (
                 <p className="text-red-500 text-xs mt-2 text-center animate-pulse">
-                    ⚠ まもなくタイムアウトします！
+                    まもなくタイムアウトします！
                 </p>
             )}
 
             {/* タイムアウト表示 */}
             {isTimedOut && (
                 <div className="mt-2 text-center">
-                    <p className="text-red-500 font-bold">⏰ 時間切れ</p>
+                    <p className="text-red-500 font-bold">TIME OUT</p>
                 </div>
             )}
         </div>

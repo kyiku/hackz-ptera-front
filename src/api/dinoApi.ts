@@ -1,16 +1,24 @@
 /**
  * Dino Game API
- * 
- * ゲーム結果の送信とレスポンス処理
+ *
+ * ゲーム開始・結果の送信とレスポンス処理
  */
 
 // API Base URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api'
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080'
+
+// ゲーム開始レスポンス型
+export interface GameStartResponse {
+    error: boolean
+    message: string
+    status?: string
+    code?: string
+}
 
 // リクエスト型
 export interface GameResultRequest {
+    result: 'clear' | 'gameover'
     score: number
-    survived: boolean
 }
 
 // 成功レスポンス型
@@ -48,6 +56,46 @@ export class DinoApiError extends Error {
 }
 
 /**
+ * ゲーム開始をAPIに通知（ユーザーステータスをstage1_dinoに昇格）
+ *
+ * @returns APIレスポンス
+ */
+export async function startGame(): Promise<GameStartResponse> {
+    const url = `${API_BASE_URL}/api/game/dino/start`
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify({}),
+        })
+
+        const contentType = response.headers.get('content-type')
+        if (!contentType || !contentType.includes('application/json')) {
+            const text = await response.text()
+            console.error('Unexpected response:', text.substring(0, 200))
+            throw new DinoApiError(
+                `Expected JSON but received ${contentType}`,
+                response.status
+            )
+        }
+
+        const data: GameStartResponse = await response.json()
+        return data
+    } catch (error) {
+        if (error instanceof DinoApiError) {
+            throw error
+        }
+        throw new DinoApiError(
+            error instanceof Error ? error.message : 'Unknown error occurred'
+        )
+    }
+}
+
+/**
  * ゲーム結果をAPIに送信
  * 
  * @param request ゲーム結果（スコア、生存フラグ）
@@ -56,7 +104,7 @@ export class DinoApiError extends Error {
 export async function submitGameResult(
     request: GameResultRequest
 ): Promise<GameResultResponse> {
-    const url = `${API_BASE_URL}/game/dino/result`
+    const url = `${API_BASE_URL}/api/game/dino/result`
 
     try {
         const response = await fetch(url, {
@@ -68,9 +116,16 @@ export async function submitGameResult(
             body: JSON.stringify(request),
         })
 
-        if (!response.ok) {
+        // CloudFront対策: バックエンドは常に200を返すため、
+        // HTTPステータスチェックは行わず、レスポンスボディのerrorフィールドで判定
+
+        // Check content type before parsing
+        const contentType = response.headers.get('content-type')
+        if (!contentType || !contentType.includes('application/json')) {
+            const text = await response.text()
+            console.error('Unexpected response:', text.substring(0, 200))
             throw new DinoApiError(
-                `API request failed with status ${response.status}`,
+                `Expected JSON but received ${contentType}`,
                 response.status
             )
         }
@@ -110,11 +165,11 @@ export async function submitGameResultMock(
     // 1秒遅延をシミュレート
     await new Promise(resolve => setTimeout(resolve, 1000))
 
-    if (request.survived) {
+    if (request.result === 'clear') {
         // 成功レスポンス
         return {
             error: false,
-            next_stage: 'captcha',
+            next_stage: 'register',
             message: 'ゲームクリア！次のステージへ進みます。',
         }
     } else {

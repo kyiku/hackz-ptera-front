@@ -3,6 +3,7 @@
  * Issue #1: ルーティング設定（React Router）
  */
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { useSessionStore } from '../store/sessionStore'
 import QueuePage from '../pages/QueuePage'
 import DinoPage from '../pages/DinoPage'
 import CaptchaPage from '../pages/CaptchaPage'
@@ -23,15 +24,16 @@ import NameSlotPage from '../pages/NameSlotPage'
 
 /**
  * ルートガード: 認証が必要なルートを保護
- * TODO: Issue #5で状態管理実装後に実際の認証ロジックを追加
+ * セッションストアのステータスで認証状態を判定
  */
 interface ProtectedRouteProps {
     children: React.ReactNode
 }
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-    // TODO: 実際の認証状態を状態管理から取得
-    const isAuthenticated = false // プレースホルダー
+    const status = useSessionStore((state) => state.status)
+    // idle以外のステータス（waiting, stage1_dino, registering）は認証済みとみなす
+    const isAuthenticated = status !== 'idle'
 
     if (!isAuthenticated) {
         return <Navigate to="/" replace />
@@ -57,6 +59,7 @@ export const AppRoutes = () => {
             {/* テストページ */}
             <Route path="/test/email-morse" element={<EmailMorseTestPage />} />
             <Route path="/test/slot-machine" element={<SlotMachineTestPage />} />
+            <Route path="/test/phone" element={<RegisterPhonePage />} />
             {/* スロット名前入力ページ（テスト用、認証不要） */}
             <Route path="/test/name-slot" element={<NameSlotPage />} />
 

@@ -37,7 +37,7 @@ export interface FailureModalProps {
 
 const typeConfig = {
     error: {
-        icon: '❌',
+        icon: 'X',
         bgColor: 'bg-red-50 dark:bg-red-900/20',
         borderColor: 'border-red-500',
         textColor: 'text-red-700 dark:text-red-300',
@@ -51,7 +51,7 @@ const typeConfig = {
         title: '成功',
     },
     warning: {
-        icon: '⚠️',
+        icon: '!',
         bgColor: 'bg-yellow-50 dark:bg-yellow-900/20',
         borderColor: 'border-yellow-500',
         textColor: 'text-yellow-700 dark:text-yellow-300',
