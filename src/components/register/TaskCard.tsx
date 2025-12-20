@@ -59,11 +59,11 @@ export const TaskCard = ({ task }: TaskCardProps) => {
         <button
             data-testid={`task-card-${task.id}`}
             onClick={handleClick}
-            className="bg-gray-800 border border-gray-700 rounded-lg p-4 hover:bg-gray-700 transition-colors text-left w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="bg-gray-50 border border-gray-200 rounded-lg p-4 hover:bg-gray-100 transition-colors text-left w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
             type="button"
         >
             <div className="flex items-center justify-between">
-                <span className="text-lg font-medium text-white">{displayName}</span>
+                <span className="text-lg font-medium text-gray-800">{displayName}</span>
                 <span className="text-2xl" data-testid={`task-status-${task.id}`}>
                     {statusIcon}
                 </span>
@@ -73,4 +73,3 @@ export const TaskCard = ({ task }: TaskCardProps) => {
 }
 
 export default TaskCard
-

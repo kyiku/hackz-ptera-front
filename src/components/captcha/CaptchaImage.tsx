@@ -172,18 +172,18 @@ export function CaptchaImage({
         >
             {/* ローディング表示 */}
             {loadingState === 'loading' && (
-                <div className="absolute inset-0 flex items-center justify-center bg-gray-800 rounded-lg">
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg">
                     <div className="flex flex-col items-center gap-3">
-                        <div className="w-10 h-10 border-4 border-blue-400 border-t-transparent rounded-full animate-spin" />
-                        <span className="text-gray-400 text-sm">画像を読み込み中...</span>
+                        <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                        <span className="text-gray-500 text-sm">画像を読み込み中...</span>
                     </div>
                 </div>
             )}
 
             {/* エラー表示 */}
             {loadingState === 'error' && (
-                <div className="absolute inset-0 flex items-center justify-center bg-gray-800 rounded-lg">
-                    <div className="flex flex-col items-center gap-3 text-red-400">
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg">
+                    <div className="flex flex-col items-center gap-3 text-red-500">
                         <span className="text-4xl">⚠️</span>
                         <span className="text-sm">画像の読み込みに失敗しました</span>
                     </div>
@@ -259,7 +259,7 @@ export function CaptchaImage({
 
             {/* 選択数表示 */}
             {loadingState === 'loaded' && (
-                <div className="mt-2 flex justify-between items-center text-sm text-gray-400">
+                <div className="mt-2 flex justify-between items-center text-sm text-gray-500">
                     <span>
                         クリックで位置を選択（クリックで削除）
                     </span>

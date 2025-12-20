@@ -23,8 +23,8 @@ export function QueuePosition({ position, totalWaiting }: QueuePositionProps) {
         }
 
         const newClass = position < prevPositionRef.current
-            ? 'animate-pulse text-green-400'
-            : 'animate-bounce text-red-400'
+            ? 'animate-pulse text-green-600'
+            : 'animate-bounce text-red-500'
 
         prevPositionRef.current = position
 
@@ -59,27 +59,27 @@ export function QueuePosition({ position, totalWaiting }: QueuePositionProps) {
         >
             {/* 合計人数表示 */}
             <div className="text-center">
-                <span className="text-gray-400 text-sm">現在</span>
-                <span className="text-white text-2xl font-bold mx-2">{totalWaiting}</span>
-                <span className="text-gray-400 text-sm">人待ち</span>
+                <span className="text-gray-500 text-sm">現在</span>
+                <span className="text-gray-800 text-2xl font-bold mx-2">{totalWaiting}</span>
+                <span className="text-gray-500 text-sm">人待ち</span>
             </div>
 
             {/* 現在の順位表示 */}
             <div className="text-center">
-                <span className="text-gray-400 text-sm">あなたは</span>
+                <span className="text-gray-500 text-sm">あなたは</span>
                 <span
-                    className={`text-5xl font-bold mx-2 transition-colors duration-300 ${animationClass || (isNext ? 'text-green-400' : 'text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-fuchsia-400')
+                    className={`text-5xl font-bold mx-2 transition-colors duration-300 ${animationClass || (isNext ? 'text-green-600' : 'text-blue-600')
                         }`}
                 >
                     {position}
                 </span>
-                <span className="text-gray-400 text-sm">番目です</span>
+                <span className="text-gray-500 text-sm">番目です</span>
             </div>
 
             {/* 順位が1の場合の特別メッセージ */}
             {isNext && (
                 <div className="text-center animate-pulse">
-                    <span className="text-green-400 font-bold text-lg">
+                    <span className="text-green-600 font-bold text-lg">
                         🎉 まもなくあなたの番です！
                     </span>
                 </div>
@@ -87,13 +87,13 @@ export function QueuePosition({ position, totalWaiting }: QueuePositionProps) {
 
             {/* プログレスバー */}
             <div className="space-y-2">
-                <div className="flex justify-between text-xs text-gray-400">
+                <div className="flex justify-between text-xs text-gray-500">
                     <span>待機進捗</span>
                     <span>{Math.round(progress)}%</span>
                 </div>
-                <div className="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
+                <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
                     <div
-                        className="h-full bg-gradient-to-r from-violet-500 to-fuchsia-500 rounded-full transition-all duration-500 ease-out"
+                        className="h-full bg-blue-500 rounded-full transition-all duration-500 ease-out"
                         style={{ width: `${progress}%` }}
                     />
                 </div>

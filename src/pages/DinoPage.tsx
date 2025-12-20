@@ -167,17 +167,17 @@ export function DinoPage() {
         const ctx = canvas.getContext('2d')
         if (!ctx) return
 
-        // 背景クリア
-        ctx.fillStyle = '#1f2937'
+        // 背景クリア（白背景）
+        ctx.fillStyle = '#FFFFFF'
         ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
 
-        // 地面を描画
-        ctx.fillStyle = '#374151'
+        // 地面を描画（砂漠色）
+        ctx.fillStyle = '#f5f0e6'
         ctx.fillRect(0, GROUND_Y, CANVAS_WIDTH, CANVAS_HEIGHT - GROUND_Y)
 
         // 地面のライン
-        ctx.strokeStyle = '#4b5563'
-        ctx.lineWidth = 2
+        ctx.strokeStyle = '#535353'
+        ctx.lineWidth = 1
         ctx.beginPath()
         ctx.moveTo(0, GROUND_Y)
         ctx.lineTo(CANVAS_WIDTH, GROUND_Y)
@@ -274,17 +274,17 @@ export function DinoPage() {
         const ctx = canvas.getContext('2d')
         if (!ctx) return
 
-        // 背景
-        ctx.fillStyle = '#1f2937'
+        // 背景（白）
+        ctx.fillStyle = '#FFFFFF'
         ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
 
-        // 地面
-        ctx.fillStyle = '#374151'
+        // 地面（砂漠色）
+        ctx.fillStyle = '#f5f0e6'
         ctx.fillRect(0, GROUND_Y, CANVAS_WIDTH, CANVAS_HEIGHT - GROUND_Y)
 
         // 地面のライン
-        ctx.strokeStyle = '#4b5563'
-        ctx.lineWidth = 2
+        ctx.strokeStyle = '#535353'
+        ctx.lineWidth = 1
         ctx.beginPath()
         ctx.moveTo(0, GROUND_Y)
         ctx.lineTo(CANVAS_WIDTH, GROUND_Y)
@@ -295,7 +295,7 @@ export function DinoPage() {
 
         // スタート画面テキスト
         if (gameState === 'ready') {
-            ctx.fillStyle = '#9ca3af'
+            ctx.fillStyle = '#535353'
             ctx.font = '24px sans-serif'
             ctx.textAlign = 'center'
             ctx.fillText('スペースキーでスタート', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2)
@@ -332,11 +332,12 @@ export function DinoPage() {
     return (
         <div
             data-testid="dino-page"
-            className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex flex-col items-center justify-center p-4"
+            className="min-h-screen bg-white flex flex-col items-center justify-center p-4"
         >
             {/* ヘッダー */}
-            <h1 className="text-3xl font-bold text-white mb-4">
-                🦖 Dino Run
+            <h1 className="text-3xl font-light text-gray-800 mb-4 flex items-center gap-3">
+                <img src="/dino-icon.png" alt="Dino" className="w-20 h-20 object-contain" />
+                <span>Dino Run</span>
             </h1>
 
             {/* スコア・タイマー表示エリア */}
@@ -350,7 +351,7 @@ export function DinoPage() {
             />
 
             {/* ゲームエリア（Canvas） */}
-            <div className="relative bg-gray-800 rounded-xl border-2 border-gray-700 shadow-2xl overflow-hidden">
+            <div className="relative bg-white rounded border border-gray-300 overflow-hidden">
                 <canvas
                     ref={canvasRef}
                     width={CANVAS_WIDTH}
@@ -361,20 +362,20 @@ export function DinoPage() {
 
                 {/* スタート画面オーバーレイ */}
                 {gameState === 'ready' && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50">
-                        <p className="text-gray-300 text-lg mb-2">
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/90">
+                        <p className="text-gray-700 text-lg mb-2">
                             障害物を避けて生き残れ！
                         </p>
-                        <p className="text-purple-400 text-sm mb-4">
+                        <p className="text-gray-500 text-sm mb-4">
                             制限時間: 3分 / 目標スコア: {TARGET_SCORE}
                         </p>
                         <button
                             onClick={startGame}
-                            className="px-8 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-colors text-lg"
+                            className="px-8 py-3 bg-white text-gray-800 font-medium border-2 border-gray-800 hover:bg-gray-800 hover:text-white transition-colors text-lg"
                         >
                             ゲームスタート
                         </button>
-                        <p className="text-gray-500 text-sm mt-4">
+                        <p className="text-gray-400 text-sm mt-4">
                             または スペースキー でスタート
                         </p>
                     </div>
@@ -382,9 +383,9 @@ export function DinoPage() {
 
                 {/* 送信中オーバーレイ */}
                 {gameState === 'submitting' && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70">
-                        <div className="w-12 h-12 border-4 border-blue-400 border-t-transparent rounded-full animate-spin mb-4"></div>
-                        <p className="text-white text-xl">
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/90">
+                        <div className="w-12 h-12 border-2 border-gray-800 border-t-transparent rounded-full animate-spin mb-4"></div>
+                        <p className="text-gray-800 text-xl">
                             結果を送信中...
                         </p>
                     </div>
@@ -392,39 +393,39 @@ export function DinoPage() {
 
                 {/* ゲームオーバー画面オーバーレイ */}
                 {gameState === 'gameover' && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70">
-                        <p className="text-red-400 text-3xl font-bold mb-2">
-                            {isTimeoutFail ? '⏰ タイムアウト' : 'ゲームオーバー'}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/90">
+                        <p className="text-gray-700 text-3xl font-medium mb-2">
+                            {isTimeoutFail ? '⏰ タイムアウト' : 'GAME OVER'}
                         </p>
-                        <p className="text-white text-xl mb-2">
+                        <p className="text-gray-800 text-xl mb-2">
                             スコア: {score}
                         </p>
                         {isNewHighScore && (
-                            <p className="text-yellow-400 text-lg font-bold mb-2 animate-pulse">
-                                🎉 NEW HIGH SCORE!
+                            <p className="text-gray-600 text-lg font-medium mb-2">
+                                🏆 NEW HIGH SCORE!
                             </p>
                         )}
                         {apiMessage && (
-                            <p className="text-gray-300 text-sm mb-2">
+                            <p className="text-gray-500 text-sm mb-2">
                                 {apiMessage}
                             </p>
                         )}
                         {apiError && (
-                            <p className="text-red-300 text-sm mb-2">
+                            <p className="text-red-500 text-sm mb-2">
                                 ⚠️ {apiError}
                             </p>
                         )}
                         {redirectCountdown !== null && redirectCountdown > 0 && (
-                            <p className="text-yellow-400 text-sm mb-4">
+                            <p className="text-gray-500 text-sm mb-4">
                                 {redirectCountdown}秒後に待機列へ戻ります...
                             </p>
                         )}
                         <button
                             onClick={() => navigate('/queue')}
                             disabled={redirectCountdown !== null && redirectCountdown > 0}
-                            className={`px-8 py-3 text-white font-bold rounded-lg transition-colors text-lg ${redirectCountdown !== null && redirectCountdown > 0
-                                ? 'bg-gray-600 cursor-not-allowed'
-                                : 'bg-violet-600 hover:bg-violet-700'
+                            className={`px-8 py-3 font-medium transition-colors text-lg border-2 ${redirectCountdown !== null && redirectCountdown > 0
+                                ? 'bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed'
+                                : 'bg-white text-gray-800 border-gray-800 hover:bg-gray-800 hover:text-white'
                                 }`}
                         >
                             待機列へ戻る
@@ -434,23 +435,23 @@ export function DinoPage() {
 
                 {/* 成功画面オーバーレイ */}
                 {gameState === 'success' && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70">
-                        <p className="text-green-400 text-3xl font-bold mb-2 animate-bounce">
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/90">
+                        <p className="text-gray-800 text-3xl font-medium mb-2">
                             🎉 クリア！
                         </p>
-                        <p className="text-white text-xl mb-2">
+                        <p className="text-gray-700 text-xl mb-2">
                             スコア: {score}
                         </p>
-                        <p className="text-blue-400 text-lg mb-2">
+                        <p className="text-gray-600 text-lg mb-2">
                             タイム: {Math.floor(timer / 60)}分{timer % 60}秒
                         </p>
                         {isNewHighScore && (
-                            <p className="text-yellow-400 text-lg font-bold mb-2 animate-pulse">
+                            <p className="text-gray-600 text-lg font-medium mb-2">
                                 🏆 NEW HIGH SCORE!
                             </p>
                         )}
                         {apiMessage && (
-                            <p className="text-green-300 text-sm mb-4">
+                            <p className="text-gray-500 text-sm mb-4">
                                 {apiMessage}
                             </p>
                         )}
@@ -462,10 +463,11 @@ export function DinoPage() {
             </div>
 
             {/* ゲーム説明 */}
-            <div className="mt-6 text-gray-400 text-center">
-                <p className="mb-2">🎮 操作方法</p>
-                <div className="flex gap-4 justify-center">
-                    <span className="bg-gray-800 px-3 py-1 rounded">スペース / タップ</span>
+            <div className="mt-6 text-gray-600 text-center">
+                <p className="mb-2">操作方法</p>
+                <div className="flex gap-4 justify-center items-center">
+                    <span className="px-3 py-1 border border-gray-400 text-gray-600 text-sm">スペース / タップ</span>
+                    <span className="text-gray-500">→</span>
                     <span>ジャンプ</span>
                 </div>
             </div>
@@ -478,7 +480,7 @@ export function DinoPage() {
                         e.preventDefault()
                         handleJump()
                     }}
-                    className="mt-4 px-12 py-6 bg-gray-800 hover:bg-gray-700 text-white font-bold rounded-xl border-2 border-gray-600 active:bg-green-600 md:hidden"
+                    className="mt-4 px-12 py-6 bg-white text-gray-800 font-medium border-2 border-gray-800 hover:bg-gray-800 hover:text-white active:bg-gray-700 active:text-white transition-colors md:hidden"
                 >
                     タップでジャンプ
                 </button>
