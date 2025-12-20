@@ -11,6 +11,8 @@
 import React, { useState } from 'react'
 import { MorseDecoder } from './MorseDecoder'
 import { useCamera } from '../../../hooks/useCamera'
+import { useBlinkDetector } from '../../../hooks/useBlinkDetector'
+import type { BlinkEvent } from '../../../hooks/useBlinkDetector'
 
 export interface EmailMorseInputProps {
     /** 入力完了時のコールバック */
@@ -29,9 +31,35 @@ export const EmailMorseInput: React.FC<EmailMorseInputProps> = ({
     const [currentMorse, setCurrentMorse] = useState('')
     const [email, setEmail] = useState(defaultValue)
     const [showHelp, setShowHelp] = useState(false)
+    const [useBlinkMode, setUseBlinkMode] = useState(false)
 
     // カメラ機能
     const { videoRef, isActive, error: cameraError, start, stop } = useCamera()
+
+    // 瞬き検出機能
+    const {
+        isDetecting,
+        error: blinkError,
+        start: startBlinkDetection,
+        stop: stopBlinkDetection,
+        currentEAR,
+        isBlinking,
+    } = useBlinkDetector({
+        videoRef,
+        onBlinkDetected: (event: BlinkEvent) => {
+            // 瞬き検出時のハンドラ
+            if (event.type === 'dot') {
+                setCurrentMorse((prev) => prev + '.')
+            } else {
+                setCurrentMorse((prev) => prev + '-')
+            }
+        },
+        onCharacterComplete: () => {
+            // 文字確定時のハンドラ
+            handleSpace()
+        },
+        debug: true,
+    })
 
     const handleDot = () => {
         setCurrentMorse((prev) => prev + '.')
@@ -83,9 +111,36 @@ export const EmailMorseInput: React.FC<EmailMorseInputProps> = ({
                     <div className="flex justify-between items-center mb-2">
                         <div className="text-sm font-semibold">カメラプレビュー</div>
                         <div className="flex gap-2">
+                            {/* モード切替ボタン */}
+                            <button
+                                onClick={() => {
+                                    const newMode = !useBlinkMode
+                                    setUseBlinkMode(newMode)
+                                    if (newMode && isActive) {
+                                        startBlinkDetection()
+                                    } else {
+                                        stopBlinkDetection()
+                                    }
+                                }}
+                                className={`px-3 py-1 text-xs rounded ${useBlinkMode
+                                    ? 'bg-blue-500 text-white'
+                                    : 'bg-gray-600 text-white'
+                                    } ${!isActive ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                data-testid="blink-mode-toggle"
+                                disabled={!isActive}
+                                title={!isActive ? 'カメラを起動してください' : ''}
+                            >
+                                {useBlinkMode ? '👁️ 瞬き検出ON' : '🖱️ 手動入力'}
+                            </button>
+
                             {!isActive ? (
                                 <button
-                                    onClick={start}
+                                    onClick={async () => {
+                                        await start()
+                                        if (useBlinkMode) {
+                                            await startBlinkDetection()
+                                        }
+                                    }}
                                     className="px-3 py-1 bg-green-500 text-white text-sm rounded hover:bg-green-600"
                                     data-testid="camera-start-button"
                                 >
@@ -93,7 +148,10 @@ export const EmailMorseInput: React.FC<EmailMorseInputProps> = ({
                                 </button>
                             ) : (
                                 <button
-                                    onClick={stop}
+                                    onClick={() => {
+                                        stop()
+                                        stopBlinkDetection()
+                                    }}
                                     className="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600"
                                     data-testid="camera-stop-button"
                                 >
@@ -126,10 +184,57 @@ export const EmailMorseInput: React.FC<EmailMorseInputProps> = ({
                                 )}
                             </div>
                         )}
+
+                        {/* 瞬き検出インジケーター */}
+                        {isActive && (
+                            <div className="absolute top-2 left-2 right-2">
+                                {/* モード切替 */}
+                                <div className="flex gap-2 mb-2">
+                                    <button
+                                        onClick={() => {
+                                            const newMode = !useBlinkMode
+                                            setUseBlinkMode(newMode)
+                                            if (newMode && isActive) {
+                                                startBlinkDetection()
+                                            } else {
+                                                stopBlinkDetection()
+                                            }
+                                        }}
+                                        className={`px-3 py-1 text-xs rounded ${useBlinkMode
+                                            ? 'bg-blue-500 text-white'
+                                            : 'bg-gray-600 text-white'
+                                            }`}
+                                        data-testid="blink-mode-toggle"
+                                    >
+                                        {useBlinkMode ? '👁️ 瞬き検出ON' : '🖱️ 手動入力'}
+                                    </button>
+                                </div>
+
+                                {/* 検出状態表示 */}
+                                {useBlinkMode && isDetecting && (
+                                    <div className="bg-black bg-opacity-70 rounded p-2 text-white text-xs">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <div className={`w-2 h-2 rounded-full ${isBlinking ? 'bg-red-500' : 'bg-green-500'}`} />
+                                            <span>{isBlinking ? '瞬き検出中' : '検出待機中'}</span>
+                                        </div>
+                                        <div>EAR値: {currentEAR.toFixed(3)}</div>
+                                    </div>
+                                )}
+
+                                {/* エラー表示 */}
+                                {blinkError && (
+                                    <div className="bg-red-500 bg-opacity-90 rounded p-2 text-white text-xs mt-2">
+                                        {blinkError}
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
 
                     <p className="text-xs text-gray-500 mt-2">
-                        ※ 瞬き検出機能は開発中です。現在はキーボード入力をご利用ください。
+                        {useBlinkMode
+                            ? '💡 短く瞬きで「・」、長く瞬きで「−」が入力されます'
+                            : '※ 瞬き検出を有効にするには「瞬き検出ON」ボタンを押してください'}
                     </p>
                 </div>
             )}

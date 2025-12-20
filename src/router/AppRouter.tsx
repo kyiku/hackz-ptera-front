@@ -10,6 +10,7 @@ import RegisterPage from '../pages/RegisterPage'
 import OtpPage from '../pages/OtpPage'
 import CompletePage from '../pages/CompletePage'
 import NotFoundPage from '../pages/NotFoundPage'
+import EmailMorseTestPage from '../pages/EmailMorseTestPage'
 
 /**
  * ルートガード: 認証が必要なルートを保護
@@ -43,6 +44,9 @@ export const AppRoutes = () => {
             <Route path="/dino" element={<DinoPage />} />
             <Route path="/game/dino" element={<DinoPage />} />
             <Route path="/captcha" element={<CaptchaPage />} />
+
+            {/* テストページ */}
+            <Route path="/test/email-morse" element={<EmailMorseTestPage />} />
 
             {/* 保護されたルート（認証が必要） */}
             <Route
