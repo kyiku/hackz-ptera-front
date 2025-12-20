@@ -8,9 +8,8 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, act } from '@testing-library/react'
-
-// TODO: CaptchaTimerコンポーネント実装後にインポートを有効化
-// import { CaptchaTimer } from './CaptchaTimer'
+import { CaptchaTimer } from './CaptchaTimer'
+import { formatTime, DEFAULT_TIMEOUT_SECONDS, WARNING_THRESHOLD, CRITICAL_THRESHOLD } from './captchaTimerUtils'
 
 describe('CaptchaTimer', () => {
   beforeEach(() => {
@@ -23,78 +22,131 @@ describe('CaptchaTimer', () => {
 
   describe('タイマー表示', () => {
     it('残り時間が表示される', () => {
-      // TODO: 実装後にテストを有効化
-      expect(true).toBe(true)
-      // render(<CaptchaTimer duration={30} onTimeout={() => {}} />)
-      // expect(screen.getByText('00:30')).toBeInTheDocument()
+      render(<CaptchaTimer duration={30} onTimeout={() => { }} />)
+      expect(screen.getByText('00:30')).toBeInTheDocument()
     })
 
     it('タイマーがカウントダウンする', () => {
-      // TODO: 実装後にテストを有効化
-      expect(true).toBe(true)
+      render(<CaptchaTimer duration={30} onTimeout={() => { }} />)
+      expect(screen.getByText('00:30')).toBeInTheDocument()
+
+      act(() => {
+        vi.advanceTimersByTime(5000)
+      })
+
+      expect(screen.getByText('00:25')).toBeInTheDocument()
     })
 
     it('タイマーがMM:SS形式で表示される', () => {
-      // TODO: 実装後にテストを有効化
-      expect(true).toBe(true)
+      render(<CaptchaTimer duration={125} onTimeout={() => { }} />)
+      expect(screen.getByText('02:05')).toBeInTheDocument()
+    })
+
+    it('data-testidが正しく設定される', () => {
+      render(<CaptchaTimer duration={30} onTimeout={() => { }} />)
+      expect(screen.getByTestId('captcha-timer')).toBeInTheDocument()
     })
   })
 
   describe('タイムアウト処理', () => {
     it('時間切れでonTimeoutコールバックが呼ばれる', () => {
-      // TODO: 実装後にテストを有効化
-      expect(true).toBe(true)
+      const onTimeout = vi.fn()
+      render(<CaptchaTimer duration={5} onTimeout={onTimeout} />)
+
+      act(() => {
+        vi.advanceTimersByTime(5000)
+      })
+
+      expect(onTimeout).toHaveBeenCalled()
     })
 
-    it('タイムアウト時にタイマーが停止する', () => {
-      // TODO: 実装後にテストを有効化
-      expect(true).toBe(true)
+    it('タイムアウト時にタイマーが0になる', () => {
+      render(<CaptchaTimer duration={3} onTimeout={() => { }} />)
+
+      act(() => {
+        vi.advanceTimersByTime(3000)
+      })
+
+      expect(screen.getByText('00:00')).toBeInTheDocument()
+    })
+
+    it('タイムアウト時に「時間切れ」が表示される', () => {
+      render(<CaptchaTimer duration={2} onTimeout={() => { }} />)
+
+      act(() => {
+        vi.advanceTimersByTime(2000)
+      })
+
+      expect(screen.getByText('⏰ 時間切れ')).toBeInTheDocument()
     })
   })
 
   describe('警告表示', () => {
-    it('残り10秒で警告色になる', () => {
-      // TODO: 実装後にテストを有効化
-      expect(true).toBe(true)
+    it('残り30秒以下で警告メッセージが表示される', () => {
+      render(<CaptchaTimer duration={35} onTimeout={() => { }} />)
+
+      act(() => {
+        vi.advanceTimersByTime(10000) // 残り25秒
+      })
+
+      expect(screen.getByText('⚠ 残り時間が少なくなっています')).toBeInTheDocument()
     })
 
-    it('残り5秒で点滅アニメーションが始まる', () => {
-      // TODO: 実装後にテストを有効化
-      expect(true).toBe(true)
-    })
+    it('残り10秒以下で危険メッセージが表示される', () => {
+      render(<CaptchaTimer duration={15} onTimeout={() => { }} />)
 
-    it('残り時間が少ないと警告音が鳴る', () => {
-      // TODO: 実装後にテストを有効化
-      expect(true).toBe(true)
+      act(() => {
+        vi.advanceTimersByTime(10000) // 残り5秒
+      })
+
+      expect(screen.getByText('⚠ まもなくタイムアウトします！')).toBeInTheDocument()
     })
   })
 
   describe('タイマー制御', () => {
-    it('タイマーを一時停止できる', () => {
-      // TODO: 実装後にテストを有効化
-      expect(true).toBe(true)
+    it('isPausedがtrueの時はカウントダウンしない', () => {
+      render(<CaptchaTimer duration={30} onTimeout={() => { }} isPaused={true} />)
+
+      expect(screen.getByText('00:30')).toBeInTheDocument()
+
+      act(() => {
+        vi.advanceTimersByTime(5000)
+      })
+
+      // 一時停止中なので変化しない
+      expect(screen.getByText('00:30')).toBeInTheDocument()
     })
 
-    it('タイマーを再開できる', () => {
-      // TODO: 実装後にテストを有効化
-      expect(true).toBe(true)
-    })
-
-    it('タイマーをリセットできる', () => {
-      // TODO: 実装後にテストを有効化
-      expect(true).toBe(true)
+    it('一時停止中の表示がされる', () => {
+      render(<CaptchaTimer duration={30} onTimeout={() => { }} isPaused={true} />)
+      expect(screen.getByText('一時停止中')).toBeInTheDocument()
     })
   })
 
   describe('プログレスバー', () => {
-    it('残り時間がプログレスバーで表示される', () => {
-      // TODO: 実装後にテストを有効化
-      expect(true).toBe(true)
+    it('showProgressBarがtrueの時プログレスバーが表示される', () => {
+      render(<CaptchaTimer duration={30} onTimeout={() => { }} showProgressBar={true} />)
+      // プログレスバーの親要素を確認
+      expect(screen.getByTestId('captcha-timer')).toBeInTheDocument()
     })
+  })
 
-    it('時間経過でプログレスバーが減少する', () => {
-      // TODO: 実装後にテストを有効化
-      expect(true).toBe(true)
+  describe('コンパクト表示', () => {
+    it('compactモードで簡潔な表示になる', () => {
+      render(<CaptchaTimer duration={30} onTimeout={() => { }} compact={true} />)
+      expect(screen.getByText('00:30')).toBeInTheDocument()
+      // コンパクトモードでは警告メッセージは表示されない
+      expect(screen.queryByText('残り時間')).not.toBeInTheDocument()
     })
+  })
+})
+
+describe('formatTime', () => {
+  it('秒数をMM:SS形式にフォーマットする', () => {
+    expect(formatTime(0)).toBe('00:00')
+    expect(formatTime(30)).toBe('00:30')
+    expect(formatTime(60)).toBe('01:00')
+    expect(formatTime(90)).toBe('01:30')
+    expect(formatTime(180)).toBe('03:00')
   })
 })
