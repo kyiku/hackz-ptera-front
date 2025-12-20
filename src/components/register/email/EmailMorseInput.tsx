@@ -44,6 +44,10 @@ export const EmailMorseInput: React.FC<EmailMorseInputProps> = ({
         stop: stopBlinkDetection,
         currentEAR,
         isBlinking,
+        isCalibrating,
+        startCalibration,
+        calibrationStatus,
+        currentThreshold,
     } = useBlinkDetector({
         videoRef,
         onBlinkDetected: (event: BlinkEvent) => {
@@ -58,6 +62,7 @@ export const EmailMorseInput: React.FC<EmailMorseInputProps> = ({
             // 文字確定時のハンドラ
             handleSpace()
         },
+        earThreshold: 0.38, // ユーザー要望により調整 (default: 0.2 -> 0.38)
         debug: true,
     })
 
@@ -105,140 +110,150 @@ export const EmailMorseInput: React.FC<EmailMorseInputProps> = ({
                 モールス信号でメールアドレスを入力してください
             </p>
 
-            {/* カメラプレビュー */}
-            {enableCamera && (
-                <div className="mb-4">
-                    <div className="flex justify-between items-center mb-2">
-                        <div className="text-sm font-semibold">カメラプレビュー</div>
-                        <div className="flex gap-2">
-                            {/* モード切替ボタン */}
+            <div className="mb-4">
+                <div className="flex justify-between items-center mb-2">
+                    <div className="text-sm font-semibold">カメラプレビュー</div>
+                    <div className="flex gap-2">
+                        {/* キャリブレーションボタン */}
+                        {isActive && (
                             <button
                                 onClick={() => {
-                                    const newMode = !useBlinkMode
-                                    setUseBlinkMode(newMode)
-                                    if (newMode && isActive) {
-                                        startBlinkDetection()
+                                    if (isCalibrating) {
+                                        stopBlinkDetection() // 停止
                                     } else {
-                                        stopBlinkDetection()
+                                        startCalibration()
+                                        // 強制的にBlinkModeにする
+                                        if (!useBlinkMode) {
+                                            setUseBlinkMode(true)
+                                            startBlinkDetection()
+                                        }
                                     }
                                 }}
-                                className={`px-3 py-1 text-xs rounded ${useBlinkMode
-                                    ? 'bg-blue-500 text-white'
-                                    : 'bg-gray-600 text-white'
-                                    } ${!isActive ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                data-testid="blink-mode-toggle"
+                                className={`px-3 py-1 text-xs rounded ${isCalibrating
+                                    ? 'bg-yellow-500 text-white'
+                                    : 'bg-indigo-500 text-white'
+                                    }`}
                                 disabled={!isActive}
-                                title={!isActive ? 'カメラを起動してください' : ''}
                             >
-                                {useBlinkMode ? '👁️ 瞬き検出ON' : '🖱️ 手動入力'}
+                                {isCalibrating ? '⏹️ 計測中止' : '🎯 感度調整'}
                             </button>
+                        )}
 
-                            {!isActive ? (
-                                <button
-                                    onClick={async () => {
-                                        await start()
-                                        if (useBlinkMode) {
-                                            await startBlinkDetection()
-                                        }
-                                    }}
-                                    className="px-3 py-1 bg-green-500 text-white text-sm rounded hover:bg-green-600"
-                                    data-testid="camera-start-button"
-                                >
-                                    📷 カメラ起動
-                                </button>
+                        {/* モード切替ボタン */}
+                        <button
+                            onClick={() => {
+                                const newMode = !useBlinkMode
+                                setUseBlinkMode(newMode)
+                                if (newMode && isActive) {
+                                    startBlinkDetection()
+                                } else {
+                                    stopBlinkDetection()
+                                }
+                            }}
+                            className={`px-3 py-1 text-xs rounded ${useBlinkMode
+                                ? 'bg-blue-500 text-white'
+                                : 'bg-gray-600 text-white'
+                                } ${!isActive ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            data-testid="blink-mode-toggle"
+                            disabled={!isActive}
+                            title={!isActive ? 'カメラを起動してください' : ''}
+                        >
+                            {useBlinkMode ? '👁️ 瞬き検出ON' : '🖱️ 手動入力'}
+                        </button>
+
+                        {!isActive ? (
+                            <button
+                                onClick={async () => {
+                                    await start()
+                                    if (useBlinkMode) {
+                                        await startBlinkDetection()
+                                    }
+                                }}
+                                className="px-3 py-1 bg-green-500 text-white text-sm rounded hover:bg-green-600"
+                                data-testid="camera-start-button"
+                            >
+                                📷 カメラ起動
+                            </button>
+                        ) : (
+                            <button
+                                onClick={() => {
+                                    stop()
+                                    stopBlinkDetection()
+                                }}
+                                className="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600"
+                                data-testid="camera-stop-button"
+                            >
+                                ⏹️ カメラ停止
+                            </button>
+                        )}
+                    </div>
+                </div>
+
+                <div className="relative bg-black rounded overflow-hidden" style={{ aspectRatio: '4/3' }}>
+                    <video
+                        ref={videoRef}
+                        className="w-full h-full object-cover"
+                        data-testid="camera-video"
+                        playsInline
+                        muted
+                    />
+                    {!isActive && (
+                        <div className="absolute inset-0 flex items-center justify-center text-white bg-gray-800">
+                            {cameraError ? (
+                                <div className="text-center p-4">
+                                    <div className="text-red-400 mb-2 text-4xl">⚠️</div>
+                                    <div className="text-sm">{cameraError}</div>
+                                </div>
                             ) : (
-                                <button
-                                    onClick={() => {
-                                        stop()
-                                        stopBlinkDetection()
-                                    }}
-                                    className="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600"
-                                    data-testid="camera-stop-button"
-                                >
-                                    ⏹️ カメラ停止
-                                </button>
+                                <div className="text-center">
+                                    <div className="mb-2 text-6xl">📷</div>
+                                    <div className="text-sm">カメラ起動ボタンを押してください</div>
+                                </div>
                             )}
                         </div>
-                    </div>
+                    )}
 
-                    <div className="relative bg-black rounded overflow-hidden" style={{ aspectRatio: '4/3' }}>
-                        <video
-                            ref={videoRef}
-                            className="w-full h-full object-cover"
-                            data-testid="camera-video"
-                            playsInline
-                            muted
-                        />
-                        {!isActive && (
-                            <div className="absolute inset-0 flex items-center justify-center text-white bg-gray-800">
-                                {cameraError ? (
-                                    <div className="text-center p-4">
-                                        <div className="text-red-400 mb-2 text-4xl">⚠️</div>
-                                        <div className="text-sm">{cameraError}</div>
-                                    </div>
-                                ) : (
-                                    <div className="text-center">
-                                        <div className="mb-2 text-6xl">📷</div>
-                                        <div className="text-sm">カメラ起動ボタンを押してください</div>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        {/* 瞬き検出インジケーター */}
-                        {isActive && (
-                            <div className="absolute top-2 left-2 right-2">
-                                {/* モード切替 */}
-                                <div className="flex gap-2 mb-2">
-                                    <button
-                                        onClick={() => {
-                                            const newMode = !useBlinkMode
-                                            setUseBlinkMode(newMode)
-                                            if (newMode && isActive) {
-                                                startBlinkDetection()
-                                            } else {
-                                                stopBlinkDetection()
-                                            }
-                                        }}
-                                        className={`px-3 py-1 text-xs rounded ${useBlinkMode
-                                            ? 'bg-blue-500 text-white'
-                                            : 'bg-gray-600 text-white'
-                                            }`}
-                                        data-testid="blink-mode-toggle"
-                                    >
-                                        {useBlinkMode ? '👁️ 瞬き検出ON' : '🖱️ 手動入力'}
-                                    </button>
+                    {/* 瞬き検出インジケーター */}
+                    {isActive && (
+                        <div className="absolute top-2 left-2 right-2">
+                            {/* キャリブレーション中の表示 */}
+                            {isCalibrating && (
+                                <div className="bg-yellow-500 bg-opacity-90 rounded p-4 text-white text-center mb-2 animate-pulse">
+                                    <div className="font-bold text-lg mb-1">感度調整中</div>
+                                    <div>{calibrationStatus}</div>
                                 </div>
+                            )}
 
-                                {/* 検出状態表示 */}
-                                {useBlinkMode && isDetecting && (
-                                    <div className="bg-black bg-opacity-70 rounded p-2 text-white text-xs">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <div className={`w-2 h-2 rounded-full ${isBlinking ? 'bg-red-500' : 'bg-green-500'}`} />
-                                            <span>{isBlinking ? '瞬き検出中' : '検出待機中'}</span>
-                                        </div>
-                                        <div>EAR値: {currentEAR.toFixed(3)}</div>
+                            {/* 検出状態表示 */}
+                            {useBlinkMode && isDetecting && !isCalibrating && (
+                                <div className="bg-black bg-opacity-70 rounded p-2 text-white text-xs flex justify-between items-center">
+                                    <div className="flex items-center gap-2">
+                                        <div className={`w-3 h-3 rounded-full ${isBlinking ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)]' : 'bg-green-500'}`} />
+                                        <span className="font-bold font-mono">{isBlinking ? 'BLINK!' : 'OPEN'}</span>
                                     </div>
-                                )}
-
-                                {/* エラー表示 */}
-                                {blinkError && (
-                                    <div className="bg-red-500 bg-opacity-90 rounded p-2 text-white text-xs mt-2">
-                                        {blinkError}
+                                    <div className="text-right font-mono text-[10px]">
+                                        <div>EAR: {currentEAR.toFixed(3)}</div>
+                                        <div className="text-gray-400">TH : {currentThreshold.toFixed(3)}</div>
                                     </div>
-                                )}
-                            </div>
-                        )}
-                    </div>
+                                </div>
+                            )}
 
-                    <p className="text-xs text-gray-500 mt-2">
-                        {useBlinkMode
-                            ? '💡 短く瞬きで「・」、長く瞬きで「−」が入力されます'
-                            : '※ 瞬き検出を有効にするには「瞬き検出ON」ボタンを押してください'}
-                    </p>
+                            {/* エラー表示 */}
+                            {blinkError && (
+                                <div className="bg-red-500 bg-opacity-90 rounded p-2 text-white text-xs mt-2">
+                                    {blinkError}
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
-            )}
 
+                <p className="text-xs text-gray-500 mt-2">
+                    {useBlinkMode
+                        ? '💡 短く瞬きで「・」、長く瞬きで「−」が入力されます。反応が悪い場合は「感度調整」を試してください。'
+                        : '※ 瞬き検出を有効にするには「瞬き検出ON」ボタンを押してください'}
+                </p>
+            </div>
             {/* 入力中のモールス信号 */}
             <div className="mb-4 p-4 bg-gray-100 dark:bg-gray-800 rounded">
                 <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">
