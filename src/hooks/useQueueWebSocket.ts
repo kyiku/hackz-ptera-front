@@ -1,10 +1,11 @@
 /**
  * useQueueWebSocket - 待機列WebSocket連携フック
- * 
+ *
  * WebSocket接続を管理し、リアルタイムで順位更新を受信する
  */
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useSessionStore } from '../store/sessionStore'
 
 // WebSocketメッセージの型定義
 interface QueueUpdateMessage {
@@ -54,6 +55,7 @@ const COUNTDOWN_SECONDS = 5
 
 export function useQueueWebSocket(): UseQueueWebSocketReturn {
     const navigate = useNavigate()
+    const setStatus = useSessionStore((state) => state.setStatus)
     const wsRef = useRef<WebSocket | null>(null)
     const reconnectTimeoutRef = useRef<number | null>(null)
     const pingIntervalRef = useRef<number | null>(null)
@@ -87,8 +89,8 @@ export function useQueueWebSocket(): UseQueueWebSocketReturn {
                 setIsConnecting(false)
                 setError(null)
 
-                // セッション管理はCookieで行われるため、
-                // sessionStorageからのセッションID送信は不要
+                // 待機中ステータスを設定
+                setStatus('waiting')
 
                 // キープアライブping開始
                 pingIntervalRef.current = window.setInterval(() => {
@@ -115,8 +117,9 @@ export function useQueueWebSocket(): UseQueueWebSocketReturn {
                             break
 
                         case 'stage_change':
-                            // ステージ変更 -> ページ遷移
+                            // ステージ変更 -> セッションストア更新 & ページ遷移
                             if (message.status === 'stage1_dino') {
+                                setStatus('stage1_dino')
                                 navigate('/game/dino')
                             }
                             break
@@ -156,7 +159,7 @@ export function useQueueWebSocket(): UseQueueWebSocketReturn {
             setError('WebSocket接続に失敗しました')
             setIsConnecting(false)
         }
-    }, [navigate])
+    }, [navigate, setStatus])
 
     // connectRefを最新に保つ
     useEffect(() => {
