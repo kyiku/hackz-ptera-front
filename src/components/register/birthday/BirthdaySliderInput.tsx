@@ -77,10 +77,10 @@ export const BirthdaySliderInput = ({
         <div className={`space-y-8 ${className}`} data-testid="birthday-slider-input">
             {/* 選択された日付の表示 */}
             <div className="text-center">
-                <p className="text-5xl font-bold text-white mb-4">
+                <p className="text-5xl font-bold text-gray-800 mb-4">
                     {formatDate(selectedDate)}
                 </p>
-                <p className="text-gray-400 text-sm">
+                <p className="text-gray-500 text-sm">
                     スライダーを動かして生年月日を選択
                 </p>
             </div>
@@ -94,7 +94,7 @@ export const BirthdaySliderInput = ({
                     value={sliderValue}
                     onChange={handleSliderChange}
                     disabled={disabled}
-                    className="w-full h-4 bg-gray-700 rounded-lg appearance-none cursor-pointer
+                    className="w-full h-4 bg-gray-200 rounded-lg appearance-none cursor-pointer
                         [&::-webkit-slider-thumb]:appearance-none
                         [&::-webkit-slider-thumb]:w-8
                         [&::-webkit-slider-thumb]:h-8

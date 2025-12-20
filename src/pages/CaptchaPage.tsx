@@ -158,9 +158,9 @@ export function CaptchaPage() {
     return (
         <div
             data-testid="captcha-page"
-            className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4"
+            className="min-h-screen bg-white flex items-center justify-center p-4"
         >
-            <div className="bg-gray-800/90 backdrop-blur-sm border border-gray-700 rounded-2xl shadow-2xl p-6 sm:p-8 w-full max-w-4xl">
+            <div className="bg-gray-50 border border-gray-200 rounded-2xl shadow-sm p-6 sm:p-8 w-full max-w-4xl">
                 {/* タイマー */}
                 <div className="mb-6">
                     <CaptchaTimer
@@ -174,22 +174,22 @@ export function CaptchaPage() {
 
                 {/* ヘッダー */}
                 <div className="text-center mb-6">
-                    <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">
-                        🤖 ロボットではないことを確認
+                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
+                        ロボットではないことを確認
                     </h1>
-                    <p className="text-gray-400 text-sm">
+                    <p className="text-gray-500 text-sm">
                         画像内の指定されたポイントをクリックしてください
                     </p>
                 </div>
 
                 {/* 残り試行回数 */}
                 <div className="flex justify-between items-center mb-4">
-                    <span className="text-gray-400 text-sm">残り試行回数</span>
+                    <span className="text-gray-500 text-sm">残り試行回数</span>
                     <div className="flex gap-1">
                         {Array.from({ length: MAX_ATTEMPTS }, (_, i) => (
                             <div
                                 key={i}
-                                className={`w-3 h-3 rounded-full ${i < remainingAttempts ? 'bg-green-500' : 'bg-gray-600'
+                                className={`w-3 h-3 rounded-full ${i < remainingAttempts ? 'bg-green-500' : 'bg-gray-300'
                                     }`}
                             />
                         ))}
@@ -198,8 +198,8 @@ export function CaptchaPage() {
 
                 {/* 説明文 */}
                 {message && captchaState !== 'error' && captchaState !== 'success' && (
-                    <div className="bg-blue-900/50 border border-blue-700 rounded-lg p-4 mb-6">
-                        <p className="text-blue-300 font-medium text-center">
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                        <p className="text-blue-600 font-medium text-center">
                             {message}
                         </p>
                     </div>
@@ -217,8 +217,8 @@ export function CaptchaPage() {
 
                 {/* 選択座標表示 */}
                 {selectedPosition && captchaState === 'idle' && (
-                    <div className="bg-gray-700/50 rounded-lg p-3 mb-4 text-center">
-                        <p className="text-gray-300 text-sm">
+                    <div className="bg-gray-100 rounded-lg p-3 mb-4 text-center">
+                        <p className="text-gray-600 text-sm">
                             選択座標: ({selectedPosition.x}, {selectedPosition.y})
                         </p>
                     </div>
@@ -226,23 +226,23 @@ export function CaptchaPage() {
 
                 {/* エラーメッセージ */}
                 {captchaState === 'error' && (
-                    <div className="bg-red-900/50 border border-red-700 rounded-lg p-3 mb-4">
-                        <p className="text-red-400 text-sm text-center">{message}</p>
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                        <p className="text-red-500 text-sm text-center">{message}</p>
                     </div>
                 )}
 
                 {/* 成功メッセージ */}
                 {captchaState === 'success' && (
-                    <div className="bg-green-900/50 border border-green-700 rounded-lg p-3 mb-4">
-                        <p className="text-green-400 text-sm text-center">
-                            ✓ {message} 登録ページへ移動します...
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
+                        <p className="text-green-600 text-sm text-center">
+                            {message} 登録ページへ移動します...
                         </p>
                     </div>
                 )}
 
                 {/* カウントダウン表示 */}
                 {redirectCountdown !== null && redirectCountdown > 0 && (
-                    <div className="text-yellow-400 text-sm text-center mb-4">
+                    <div className="text-amber-600 text-sm text-center mb-4">
                         {redirectCountdown}秒後にリトライ可能...
                     </div>
                 )}
@@ -280,7 +280,7 @@ export function CaptchaPage() {
                 {remainingAttempts <= 0 && redirectCountdown === null && (
                     <button
                         onClick={resetCaptcha}
-                        className="w-full py-3 bg-violet-600 hover:bg-violet-700 text-white font-bold rounded-lg transition-colors"
+                        className="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition-colors"
                     >
                         やり直す
                     </button>

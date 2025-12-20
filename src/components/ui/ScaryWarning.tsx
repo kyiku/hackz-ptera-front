@@ -57,7 +57,7 @@ export const ScaryWarning: React.FC<ScaryWarningProps> = ({
                 data-testid="warning-icon"
                 aria-hidden="true"
             >
-                ⚠️
+                !
             </span>
             <p className={levelStyles} data-testid="warning-message">
                 {message}
