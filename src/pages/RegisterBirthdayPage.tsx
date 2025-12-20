@@ -1,9 +1,9 @@
 /**
  * RegisterBirthdayPage - 生年月日入力ページ
- * Issue #32: 生年月日入力 - 横スクロールバーUI
- * 
+ * Issue #32: 生年月日入力 - スライダーUI
+ *
  * 機能:
- * - 横スクロールバーで日付を選択
+ * - 年・月・日のスライダーで日付を選択
  * - 選択した日付をregistrationStoreに保存
  * - タスク完了としてマーク
  */
@@ -11,7 +11,7 @@
 import { useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useRegistrationStore } from '../store/registrationStore'
-import { BirthdayScrollInput } from '../components/register/birthday/BirthdayScrollInput'
+import { BirthdaySliderInput } from '../components/register/birthday/BirthdaySliderInput'
 
 const RegisterBirthdayPage = () => {
     const navigate = useNavigate()
@@ -39,8 +39,8 @@ const RegisterBirthdayPage = () => {
             <div className="max-w-4xl mx-auto">
                 <h1 className="text-3xl font-bold text-center mb-8">生年月日入力</h1>
 
-                {/* 横スクロールバー */}
-                <BirthdayScrollInput
+                {/* スライダー入力 */}
+                <BirthdaySliderInput
                     value={formData.birthday}
                     onChange={handleDateChange}
                 />
