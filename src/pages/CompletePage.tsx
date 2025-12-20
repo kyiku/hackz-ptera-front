@@ -18,16 +18,16 @@ const CompletePage = () => {
     return (
         <div
             data-testid="complete-page"
-            className="min-h-screen bg-gray-900 text-white flex items-center justify-center"
+            className="min-h-screen bg-white text-gray-800 flex items-center justify-center"
         >
             <div className="text-center max-w-2xl px-4">
                 <h1 className="text-4xl font-bold mb-6 text-red-500">サーバーエラー</h1>
-                <div className="bg-red-900/20 border border-red-700 rounded-lg p-6 mb-6">
-                    <p className="text-lg text-red-300 mb-4">
+                <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-6">
+                    <p className="text-lg text-red-600 mb-4">
                         サーバーエラーが発生しました。お手数ですが最初からやり直してください。
                     </p>
                 </div>
-                <p className="text-gray-400 text-sm">
+                <p className="text-gray-500 text-sm">
                     {remainingSeconds}秒後にトップページへリダイレクトします...
                 </p>
             </div>

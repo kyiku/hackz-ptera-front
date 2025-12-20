@@ -1,7 +1,7 @@
 /**
  * StreetViewNavigation - ストリートビュー風ナビゲーションコンポーネント
  * Issue #34: 住所入力 - ストリートビュー風ナビゲーション
- * 
+ *
  * 機能:
  * - ハックツオフィスからスタート
  * - 方向キーで移動
@@ -215,18 +215,18 @@ export const StreetViewNavigation = ({
         <div className={`${className}`} ref={containerRef} data-testid="street-view-navigation">
             {/* 現在位置表示 */}
             <div className="text-center mb-6">
-                <p className="text-2xl font-bold text-white mb-2">現在地</p>
-                <p className="text-lg text-gray-300">{currentAddress}</p>
-                <p className="text-sm text-gray-400 mt-2">歩数: {steps}歩</p>
+                <p className="text-2xl font-medium text-gray-800 mb-2">現在地</p>
+                <p className="text-lg text-gray-600">{currentAddress}</p>
+                <p className="text-sm text-gray-500 mt-2">歩数: {steps}歩</p>
             </div>
 
             {/* ストリートビュー風表示エリア */}
-            <div className="bg-gray-800 rounded-lg p-8 mb-6 min-h-[400px] flex items-center justify-center">
+            <div className="bg-gray-100 border border-gray-300 rounded-lg p-8 mb-6 min-h-[400px] flex items-center justify-center">
                 <div className="text-center">
                     <div className="text-6xl mb-4">🏢</div>
-                    <p className="text-xl text-white mb-2">{position.building}</p>
-                    <p className="text-lg text-gray-400">{position.street}</p>
-                    <p className="text-sm text-gray-500 mt-4">
+                    <p className="text-xl text-gray-800 mb-2">{position.building}</p>
+                    <p className="text-lg text-gray-500">{position.street}</p>
+                    <p className="text-sm text-gray-400 mt-4">
                         座標: ({position.x}, {position.y})
                     </p>
                 </div>
@@ -240,8 +240,8 @@ export const StreetViewNavigation = ({
                     onClick={() => handleDirectionClick('north')}
                     disabled={disabled}
                     className={`
-                        px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg
-                        transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500
+                        px-6 py-3 bg-white border-2 border-gray-800 text-gray-800 hover:bg-gray-800 hover:text-white rounded-lg
+                        transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500
                         ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
                     `}
                     type="button"
@@ -256,8 +256,8 @@ export const StreetViewNavigation = ({
                         onClick={() => handleDirectionClick('west')}
                         disabled={disabled}
                         className={`
-                            px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg
-                            transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500
+                            px-6 py-3 bg-white border-2 border-gray-800 text-gray-800 hover:bg-gray-800 hover:text-white rounded-lg
+                            transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500
                             ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
                         `}
                         type="button"
@@ -269,8 +269,8 @@ export const StreetViewNavigation = ({
                         onClick={() => handleDirectionClick('east')}
                         disabled={disabled}
                         className={`
-                            px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg
-                            transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500
+                            px-6 py-3 bg-white border-2 border-gray-800 text-gray-800 hover:bg-gray-800 hover:text-white rounded-lg
+                            transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500
                             ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
                         `}
                         type="button"
@@ -285,8 +285,8 @@ export const StreetViewNavigation = ({
                     onClick={() => handleDirectionClick('south')}
                     disabled={disabled}
                     className={`
-                        px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg
-                        transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500
+                        px-6 py-3 bg-white border-2 border-gray-800 text-gray-800 hover:bg-gray-800 hover:text-white rounded-lg
+                        transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500
                         ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
                     `}
                     type="button"
@@ -296,7 +296,7 @@ export const StreetViewNavigation = ({
             </div>
 
             {/* 操作説明 */}
-            <div className="text-center text-sm text-gray-400 mb-4">
+            <div className="text-center text-sm text-gray-500 mb-4">
                 <p>方向キー（↑↓←→）またはWASDキーで移動</p>
                 <p>または、ボタンをクリックして移動</p>
             </div>
@@ -308,8 +308,8 @@ export const StreetViewNavigation = ({
                     onClick={handleReset}
                     disabled={disabled}
                     className={`
-                        px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg
-                        transition-colors focus:outline-none focus:ring-2 focus:ring-red-500
+                        px-6 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg
+                        transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500
                         ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
                     `}
                     type="button"
@@ -322,4 +322,3 @@ export const StreetViewNavigation = ({
 }
 
 export default StreetViewNavigation
-

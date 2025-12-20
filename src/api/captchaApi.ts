@@ -5,7 +5,7 @@
  */
 
 // API Base URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api'
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 
 // --- 型定義 ---
 
@@ -13,7 +13,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || '/api'
 export interface CaptchaGenerateResponse {
     error: false
     image_url: string
-    message: string
+    target_image_url: string
 }
 
 // CAPTCHA検証リクエスト
@@ -25,7 +25,7 @@ export interface CaptchaVerifyRequest {
 // CAPTCHA検証成功レスポンス
 export interface CaptchaVerifySuccessResponse {
     error: false
-    token: string
+    next_stage: string
     message: string
 }
 
@@ -74,17 +74,28 @@ export class CaptchaApiError extends Error {
  * GET /api/captcha/generate
  */
 export async function getCaptchaImage(): Promise<CaptchaGenerateResponse> {
-    const url = `${API_BASE_URL}/captcha/generate`
+    const url = `${API_BASE_URL}/api/captcha/generate`
 
     try {
         const response = await fetch(url, {
-            method: 'GET',
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
             credentials: 'include',
+            body: JSON.stringify({}),
         })
 
-        if (!response.ok) {
+        // CloudFront対策: バックエンドは常に200を返すため、
+        // HTTPステータスチェックは行わず、レスポンスボディのerrorフィールドで判定
+
+        // Check content type before parsing
+        const contentType = response.headers.get('content-type')
+        if (!contentType || !contentType.includes('application/json')) {
+            const text = await response.text()
+            console.error('Unexpected response:', text.substring(0, 200))
             throw new CaptchaApiError(
-                `Failed to get CAPTCHA image: ${response.status}`,
+                `Expected JSON but received ${contentType}`,
                 response.status
             )
         }
@@ -108,7 +119,7 @@ export async function getCaptchaImage(): Promise<CaptchaGenerateResponse> {
 export async function verifyCaptcha(
     request: CaptchaVerifyRequest
 ): Promise<CaptchaVerifyResponse> {
-    const url = `${API_BASE_URL}/captcha/verify`
+    const url = `${API_BASE_URL}/api/captcha/verify`
 
     try {
         const response = await fetch(url, {
@@ -120,9 +131,16 @@ export async function verifyCaptcha(
             body: JSON.stringify(request),
         })
 
-        if (!response.ok) {
+        // CloudFront対策: バックエンドは常に200を返すため、
+        // HTTPステータスチェックは行わず、レスポンスボディのerrorフィールドで判定
+
+        // Check content type before parsing
+        const contentType = response.headers.get('content-type')
+        if (!contentType || !contentType.includes('application/json')) {
+            const text = await response.text()
+            console.error('Unexpected response:', text.substring(0, 200))
             throw new CaptchaApiError(
-                `CAPTCHA verification failed: ${response.status}`,
+                `Expected JSON but received ${contentType}`,
                 response.status
             )
         }
@@ -161,7 +179,7 @@ export async function getCaptchaImageMock(): Promise<CaptchaGenerateResponse> {
     return {
         error: false,
         image_url: `https://picsum.photos/seed/${Date.now()}/1024/768`,
-        message: '画像内の特定のポイントをクリックしてください。',
+        target_image_url: `https://picsum.photos/seed/${Date.now() + 1}/100/100`,
     }
 }
 
@@ -183,7 +201,7 @@ export async function verifyCaptchaMock(
     if (isCorrect) {
         return {
             error: false,
-            token: `captcha_token_${Date.now()}`,
+            next_stage: 'registering',
             message: '認証に成功しました！',
         }
     }

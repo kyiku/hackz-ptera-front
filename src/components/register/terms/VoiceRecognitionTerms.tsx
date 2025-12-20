@@ -1,7 +1,7 @@
 /**
  * VoiceRecognitionTerms - 音声認識読み上げコンポーネント
  * Issue #35: 利用規約 - 音声認識読み上げ・検証
- * 
+ *
  * 機能:
  * - 利用規約テキストを表示
  * - ユーザーが音声で読み上げ
@@ -178,38 +178,38 @@ export const VoiceRecognitionTerms = ({
     return (
         <div className={`${className}`} data-testid="voice-recognition-terms">
             {/* 利用規約テキスト */}
-            <div className="bg-gray-800 rounded-lg p-6 mb-6 max-h-64 overflow-y-auto">
-                <h2 className="text-xl font-bold text-white mb-4">利用規約</h2>
-                <p className="text-gray-300 whitespace-pre-wrap">{termsText}</p>
+            <div className="bg-gray-100 border border-gray-300 rounded-lg p-6 mb-6 max-h-64 overflow-y-auto">
+                <h2 className="text-xl font-medium text-gray-800 mb-4">利用規約</h2>
+                <p className="text-gray-600 whitespace-pre-wrap">{termsText}</p>
             </div>
 
             {/* 状態表示 */}
             <div className="text-center mb-6">
                 {state === 'idle' && (
-                    <p className="text-gray-400">「読み上げ開始」ボタンを押して、利用規約を読み上げてください</p>
+                    <p className="text-gray-500">「読み上げ開始」ボタンを押して、利用規約を読み上げてください</p>
                 )}
                 {state === 'listening' && (
                     <div>
                         <div className="inline-block w-4 h-4 bg-red-500 rounded-full animate-pulse mr-2"></div>
-                        <p className="text-red-400 inline">音声認識中...</p>
+                        <p className="text-red-600 inline">音声認識中...</p>
                     </div>
                 )}
                 {state === 'processing' && (
-                    <p className="text-yellow-400">検証中...</p>
+                    <p className="text-gray-600">検証中...</p>
                 )}
                 {state === 'success' && (
-                    <p className="text-green-400">✓ 検証成功！</p>
+                    <p className="text-green-600">検証成功！</p>
                 )}
                 {state === 'error' && error && (
-                    <p className="text-red-400">{error}</p>
+                    <p className="text-red-600">{error}</p>
                 )}
             </div>
 
             {/* 読み上げ内容表示 */}
             {transcript && (
-                <div className="bg-gray-800 rounded-lg p-4 mb-6">
-                    <h3 className="text-lg font-bold text-white mb-2">読み上げ内容</h3>
-                    <p className="text-gray-300">{transcript}</p>
+                <div className="bg-gray-100 border border-gray-300 rounded-lg p-4 mb-6">
+                    <h3 className="text-lg font-medium text-gray-800 mb-2">読み上げ内容</h3>
+                    <p className="text-gray-600">{transcript}</p>
                 </div>
             )}
 
@@ -221,8 +221,8 @@ export const VoiceRecognitionTerms = ({
                         onClick={handleStart}
                         disabled={disabled}
                         className={`
-                            px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg
-                            transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500
+                            px-8 py-3 bg-white border-2 border-gray-800 text-gray-800 hover:bg-gray-800 hover:text-white rounded-lg
+                            transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500
                             ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
                         `}
                         type="button"
@@ -238,8 +238,8 @@ export const VoiceRecognitionTerms = ({
                             onClick={handleStop}
                             disabled={disabled}
                             className={`
-                                px-8 py-3 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg
-                                transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-500
+                                px-8 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg
+                                transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500
                                 ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
                             `}
                             type="button"
@@ -251,8 +251,8 @@ export const VoiceRecognitionTerms = ({
                             onClick={handleVerify}
                             disabled={disabled || !transcript.trim()}
                             className={`
-                                px-8 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg
-                                transition-colors focus:outline-none focus:ring-2 focus:ring-green-500
+                                px-8 py-3 bg-white border-2 border-gray-800 text-gray-800 hover:bg-gray-800 hover:text-white rounded-lg
+                                transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500
                                 ${disabled || !transcript.trim() ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
                             `}
                             type="button"
@@ -268,7 +268,7 @@ export const VoiceRecognitionTerms = ({
                         onClick={handleReset}
                         disabled={disabled}
                         className={`
-                            px-8 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg
+                            px-8 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg
                             transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500
                             ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
                         `}
@@ -368,4 +368,3 @@ declare global {
 }
 
 export default VoiceRecognitionTerms
-

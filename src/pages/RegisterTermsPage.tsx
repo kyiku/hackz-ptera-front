@@ -1,7 +1,7 @@
 /**
  * RegisterTermsPage - 利用規約ページ
  * Issue #35: 利用規約 - 音声認識読み上げ・検証
- * 
+ *
  * 機能:
  * - 利用規約テキストを表示
  * - 音声認識で読み上げを検証
@@ -58,10 +58,10 @@ const RegisterTermsPage = () => {
     return (
         <div
             data-testid="register-terms-page"
-            className="min-h-screen bg-gray-900 text-white py-8 px-4"
+            className="min-h-screen bg-white text-gray-800 py-8 px-4"
         >
             <div className="max-w-4xl mx-auto">
-                <h1 className="text-3xl font-bold text-center mb-8">利用規約</h1>
+                <h1 className="text-3xl font-light text-center mb-8">利用規約</h1>
 
                 {/* 音声認識読み上げ */}
                 <VoiceRecognitionTerms
@@ -74,7 +74,7 @@ const RegisterTermsPage = () => {
                     <button
                         data-testid="back-to-dashboard-button"
                         onClick={handleBack}
-                        className="px-6 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="px-6 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
                         type="button"
                     >
                         ダッシュボードに戻る

@@ -1,21 +1,29 @@
 /**
  * useQueueWebSocket - 待機列WebSocket連携フック
- * 
+ *
  * WebSocket接続を管理し、リアルタイムで順位更新を受信する
  */
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useSessionStore } from '../store/sessionStore'
 
 // WebSocketメッセージの型定義
 interface QueueUpdateMessage {
-    type: 'queue_update'
+    type: 'queueUpdate'
     position: number
-    totalWaiting: number
+    total: number
 }
 
 interface StageChangeMessage {
     type: 'stage_change'
     status: string
+    message?: string
+}
+
+interface ConnectedMessage {
+    type: 'connected'
+    message: string
+    user_id: string
 }
 
 interface ErrorMessage {
@@ -23,7 +31,7 @@ interface ErrorMessage {
     message: string
 }
 
-type WebSocketMessage = QueueUpdateMessage | StageChangeMessage | ErrorMessage
+type WebSocketMessage = QueueUpdateMessage | StageChangeMessage | ConnectedMessage | ErrorMessage
 
 // フックの戻り値の型
 interface UseQueueWebSocketReturn {
@@ -33,23 +41,34 @@ interface UseQueueWebSocketReturn {
     position: number
     totalWaiting: number
     reconnect: () => void
+    /** 遷移までのカウントダウン秒数（null=カウントダウン中でない） */
+    countdownSeconds: number | null
+    /** 自分の番かどうか */
+    isMyTurn: boolean
 }
 
 // WebSocket URL（環境変数から取得、なければモック用のデフォルト）
 const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8080/ws'
 
+// 自分の番になってから遷移するまでの秒数
+const COUNTDOWN_SECONDS = 5
+
 export function useQueueWebSocket(): UseQueueWebSocketReturn {
     const navigate = useNavigate()
+    const setStatus = useSessionStore((state) => state.setStatus)
     const wsRef = useRef<WebSocket | null>(null)
     const reconnectTimeoutRef = useRef<number | null>(null)
     const pingIntervalRef = useRef<number | null>(null)
     const connectRef = useRef<(() => void) | null>(null)
+    const countdownIntervalRef = useRef<number | null>(null)
 
     const [isConnected, setIsConnected] = useState(false)
     const [isConnecting, setIsConnecting] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [position, setPosition] = useState(0)
     const [totalWaiting, setTotalWaiting] = useState(0)
+    const [countdownSeconds, setCountdownSeconds] = useState<number | null>(null)
+    const countdownStartedRef = useRef(false)
 
     // WebSocket接続を確立
     const connect = useCallback(() => {
@@ -70,11 +89,8 @@ export function useQueueWebSocket(): UseQueueWebSocketReturn {
                 setIsConnecting(false)
                 setError(null)
 
-                // セッションID送信（あれば）
-                const sessionId = sessionStorage.getItem('sessionId')
-                if (sessionId) {
-                    ws.send(JSON.stringify({ type: 'session', sessionId }))
-                }
+                // 待機中ステータスを設定
+                setStatus('waiting')
 
                 // キープアライブping開始
                 pingIntervalRef.current = window.setInterval(() => {
@@ -89,15 +105,21 @@ export function useQueueWebSocket(): UseQueueWebSocketReturn {
                     const message: WebSocketMessage = JSON.parse(event.data)
 
                     switch (message.type) {
-                        case 'queue_update':
+                        case 'connected':
+                            // 接続成功メッセージ
+                            console.log('WebSocket connected:', message.message)
+                            break
+
+                        case 'queueUpdate':
                             // 順位表示を更新
                             setPosition(message.position)
-                            setTotalWaiting(message.totalWaiting)
+                            setTotalWaiting(message.total)
                             break
 
                         case 'stage_change':
-                            // ステージ変更 -> ページ遷移
+                            // ステージ変更 -> セッションストア更新 & ページ遷移
                             if (message.status === 'stage1_dino') {
+                                setStatus('stage1_dino')
                                 navigate('/game/dino')
                             }
                             break
@@ -137,7 +159,7 @@ export function useQueueWebSocket(): UseQueueWebSocketReturn {
             setError('WebSocket接続に失敗しました')
             setIsConnecting(false)
         }
-    }, [navigate])
+    }, [navigate, setStatus])
 
     // connectRefを最新に保つ
     useEffect(() => {
@@ -175,6 +197,56 @@ export function useQueueWebSocket(): UseQueueWebSocketReturn {
         }
     }, [connect])
 
+    // 自分の番かどうか（派生状態）
+    const isMyTurn = position === 1 && isConnected
+
+    // position=1になったらカウントダウン開始、0秒で遷移
+    useEffect(() => {
+        if (isMyTurn) {
+            // すでにカウントダウン中なら何もしない
+            if (countdownStartedRef.current) {
+                return
+            }
+            countdownStartedRef.current = true
+
+            // カウントダウン開始（初期値をセット）
+            let remaining = COUNTDOWN_SECONDS
+            // isMyTurnの変化に応じて初期化する必要があるため、ここでのsetStateは必要
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setCountdownSeconds(remaining)
+
+            countdownIntervalRef.current = window.setInterval(() => {
+                remaining -= 1
+                if (remaining <= 0) {
+                    // カウントダウン終了、遷移
+                    if (countdownIntervalRef.current) {
+                        clearInterval(countdownIntervalRef.current)
+                        countdownIntervalRef.current = null
+                    }
+                    setCountdownSeconds(0)
+                    navigate('/game/dino')
+                } else {
+                    setCountdownSeconds(remaining)
+                }
+            }, 1000)
+        } else {
+            // position が 1 以外ならカウントダウンをリセット
+            countdownStartedRef.current = false
+            if (countdownIntervalRef.current) {
+                clearInterval(countdownIntervalRef.current)
+                countdownIntervalRef.current = null
+            }
+            setCountdownSeconds(null)
+        }
+
+        return () => {
+            if (countdownIntervalRef.current) {
+                clearInterval(countdownIntervalRef.current)
+                countdownIntervalRef.current = null
+            }
+        }
+    }, [isMyTurn, navigate])
+
     return {
         isConnected,
         isConnecting,
@@ -182,5 +254,7 @@ export function useQueueWebSocket(): UseQueueWebSocketReturn {
         position,
         totalWaiting,
         reconnect,
+        countdownSeconds,
+        isMyTurn,
     }
 }
