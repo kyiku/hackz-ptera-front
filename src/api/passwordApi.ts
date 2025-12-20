@@ -17,7 +17,17 @@ export interface PasswordAnalyzeRequest {
 }
 
 /**
- * パスワード解析レスポンス
+ * パスワード解析レスポンス（バックエンド）
+ */
+interface PasswordAnalyzeRawResponse {
+    error: boolean
+    analysis?: string
+    message?: string
+    code?: string
+}
+
+/**
+ * パスワード解析レスポンス（正規化後）
  */
 export interface PasswordAnalyzeResponse {
     error: false
@@ -53,12 +63,30 @@ export async function analyzePassword(
     request: PasswordAnalyzeRequest
 ): Promise<PasswordAnalyzeResponse> {
     try {
-        const response = await apiClient.post<PasswordAnalyzeResponse>(
+        const rawResponse = await apiClient.post<PasswordAnalyzeRawResponse>(
             '/api/password/analyze',
             request
         )
 
-        return response
+        // エラーレスポンスの場合
+        if (rawResponse.error) {
+            throw new PasswordApiError(
+                rawResponse.message || rawResponse.code || 'API error',
+                undefined,
+                rawResponse
+            )
+        }
+
+        // analysisまたはmessageフィールドからメッセージを取得
+        const message = rawResponse.analysis || rawResponse.message || ''
+        if (!message) {
+            throw new PasswordApiError('Empty response from API')
+        }
+
+        return {
+            error: false,
+            message,
+        }
     } catch (error) {
         if (error instanceof PasswordApiError) {
             throw error
