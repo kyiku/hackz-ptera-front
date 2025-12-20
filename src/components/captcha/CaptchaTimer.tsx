@@ -1,19 +1,18 @@
 /**
  * CaptchaTimer - CAPTCHA用タイマーコンポーネント
- * 
+ *
  * 3分タイムアウトの表示と処理
  * 仕様:
  * - タイムアウト: 3分
  * - タイムアウト時は失敗扱い、待機列最後尾へ
  */
-import { useState, useEffect, useCallback, useRef } from 'react'
-
-// デフォルトタイムアウト（3分 = 180秒）
-export const DEFAULT_TIMEOUT_SECONDS = 180
-
-// 警告閾値
-const WARNING_THRESHOLD = 30  // 30秒で警告色
-const CRITICAL_THRESHOLD = 10  // 10秒で点滅
+import { useState, useEffect, useRef } from 'react'
+import {
+    DEFAULT_TIMEOUT_SECONDS,
+    WARNING_THRESHOLD,
+    CRITICAL_THRESHOLD,
+    formatTime,
+} from './captchaTimerUtils'
 
 export interface CaptchaTimerProps {
     /** タイムアウト秒数（デフォルト: 180秒） */
@@ -26,15 +25,6 @@ export interface CaptchaTimerProps {
     showProgressBar?: boolean
     /** コンパクト表示 */
     compact?: boolean
-}
-
-/**
- * 秒数をMM:SS形式にフォーマット
- */
-export function formatTime(seconds: number): string {
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
 }
 
 /**
@@ -170,59 +160,4 @@ export function CaptchaTimer({
     )
 }
 
-/**
- * useCaptchaTimer - タイマーロジックのカスタムフック
- */
-export function useCaptchaTimer(duration: number = DEFAULT_TIMEOUT_SECONDS) {
-    const [remainingTime, setRemainingTime] = useState(duration)
-    const [isPaused, setIsPaused] = useState(false)
-    const [isTimedOut, setIsTimedOut] = useState(false)
-
-    // カウントダウン
-    useEffect(() => {
-        if (isPaused || isTimedOut || remainingTime <= 0) return
-
-        const timer = setInterval(() => {
-            setRemainingTime(prev => {
-                if (prev <= 1) {
-                    clearInterval(timer)
-                    setIsTimedOut(true)
-                    return 0
-                }
-                return prev - 1
-            })
-        }, 1000)
-
-        return () => clearInterval(timer)
-    }, [isPaused, isTimedOut, remainingTime])
-
-    // 一時停止
-    const pause = useCallback(() => {
-        setIsPaused(true)
-    }, [])
-
-    // 再開
-    const resume = useCallback(() => {
-        setIsPaused(false)
-    }, [])
-
-    // リセット
-    const reset = useCallback(() => {
-        setRemainingTime(duration)
-        setIsTimedOut(false)
-        setIsPaused(false)
-    }, [duration])
-
-    return {
-        remainingTime,
-        formattedTime: formatTime(remainingTime),
-        isPaused,
-        isTimedOut,
-        isWarning: remainingTime <= WARNING_THRESHOLD && remainingTime > CRITICAL_THRESHOLD,
-        isCritical: remainingTime <= CRITICAL_THRESHOLD,
-        progressPercent: (remainingTime / duration) * 100,
-        pause,
-        resume,
-        reset,
-    }
-}
+export default CaptchaTimer

@@ -11,7 +11,8 @@ import { useState, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CaptchaImage } from '../components/captcha/CaptchaImage'
 import type { ClickPosition } from '../components/captcha/CaptchaImage'
-import { CaptchaTimer, DEFAULT_TIMEOUT_SECONDS } from '../components/captcha/CaptchaTimer'
+import { CaptchaTimer } from '../components/captcha/CaptchaTimer'
+import { DEFAULT_TIMEOUT_SECONDS } from '../components/captcha/captchaTimerUtils'
 import {
     getCaptchaImageMock,
     verifyCaptchaMock,
@@ -48,7 +49,7 @@ export function CaptchaPage() {
             setImageUrl(response.image_url)
             setMessage(response.message)
             setCaptchaState('idle')
-        } catch (error) {
+        } catch {
             setCaptchaState('error')
             setMessage('画像の取得に失敗しました。ページを更新してください。')
         }
@@ -111,7 +112,7 @@ export function CaptchaPage() {
                 setSelectedPosition(null)
                 setCaptchaState('idle')
             }
-        } catch (error) {
+        } catch {
             setCaptchaState('error')
             setMessage('検証に失敗しました。もう一度お試しください。')
         }
