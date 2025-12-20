@@ -93,6 +93,17 @@ export async function getCaptchaImage(): Promise<CaptchaGenerateResponse> {
             )
         }
 
+        // Check content type before parsing
+        const contentType = response.headers.get('content-type')
+        if (!contentType || !contentType.includes('application/json')) {
+            const text = await response.text()
+            console.error('Unexpected response:', text.substring(0, 200))
+            throw new CaptchaApiError(
+                `Expected JSON but received ${contentType}`,
+                response.status
+            )
+        }
+
         const data: CaptchaGenerateResponse = await response.json()
         return data
     } catch (error) {
@@ -127,6 +138,17 @@ export async function verifyCaptcha(
         if (!response.ok) {
             throw new CaptchaApiError(
                 `CAPTCHA verification failed: ${response.status}`,
+                response.status
+            )
+        }
+
+        // Check content type before parsing
+        const contentType = response.headers.get('content-type')
+        if (!contentType || !contentType.includes('application/json')) {
+            const text = await response.text()
+            console.error('Unexpected response:', text.substring(0, 200))
+            throw new CaptchaApiError(
+                `Expected JSON but received ${contentType}`,
                 response.status
             )
         }

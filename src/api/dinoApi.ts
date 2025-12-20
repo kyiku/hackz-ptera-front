@@ -75,6 +75,17 @@ export async function submitGameResult(
             )
         }
 
+        // Check content type before parsing
+        const contentType = response.headers.get('content-type')
+        if (!contentType || !contentType.includes('application/json')) {
+            const text = await response.text()
+            console.error('Unexpected response:', text.substring(0, 200))
+            throw new DinoApiError(
+                `Expected JSON but received ${contentType}`,
+                response.status
+            )
+        }
+
         const data: GameResultResponse = await response.json()
         return data
     } catch (error) {
