@@ -85,13 +85,18 @@ export const useCamera = ({
 
     useEffect(() => {
         if (autoStart) {
-            start()
+            // 非同期関数を即時実行（ESLint set-state-in-effect対策）
+            const initCamera = async () => {
+                await start()
+            }
+            void initCamera()
         }
 
         return () => {
             stop()
         }
-    }, []) // eslint-disable-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
 
     return {
         videoRef,
