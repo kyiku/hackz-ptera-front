@@ -8,62 +8,91 @@
  */
 import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
-
-// TODO: Layoutコンポーネント実装後にインポートを有効化
-// import { Layout } from './Layout'
+import { Layout } from './Layout'
 
 describe('Layout', () => {
   describe('基本レンダリング', () => {
     it('Layoutコンポーネントが正しくレンダリングされる', () => {
-      // TODO: 実装後にテストを有効化
-      expect(true).toBe(true)
-      // render(
-      //   <Layout>
-      //     <div data-testid="child">Child Content</div>
-      //   </Layout>
-      // )
-      // expect(screen.getByTestId('layout')).toBeInTheDocument()
+      render(
+        <Layout>
+          <div data-testid="child">Child Content</div>
+        </Layout>
+      )
+      expect(screen.getByTestId('layout')).toBeInTheDocument()
     })
 
     it('子要素が正しく表示される', () => {
-      // TODO: 実装後にテストを有効化
-      expect(true).toBe(true)
+      render(
+        <Layout>
+          <div data-testid="child">Child Content</div>
+        </Layout>
+      )
+      expect(screen.getByTestId('child')).toBeInTheDocument()
+      expect(screen.getByTestId('child')).toHaveTextContent('Child Content')
     })
   })
 
   describe('ヘッダー', () => {
     it('ヘッダーが表示される', () => {
-      // TODO: 実装後にテストを有効化
-      expect(true).toBe(true)
+      render(
+        <Layout>
+          <div>Content</div>
+        </Layout>
+      )
+      expect(screen.getByTestId('header')).toBeInTheDocument()
     })
 
     it('ロゴが表示される', () => {
-      // TODO: 実装後にテストを有効化
-      expect(true).toBe(true)
+      render(
+        <Layout>
+          <div>Content</div>
+        </Layout>
+      )
+      expect(screen.getByTestId('logo')).toBeInTheDocument()
     })
   })
 
   describe('フッター', () => {
     it('フッターが表示される', () => {
-      // TODO: 実装後にテストを有効化
-      expect(true).toBe(true)
+      render(
+        <Layout>
+          <div>Content</div>
+        </Layout>
+      )
+      expect(screen.getByTestId('footer')).toBeInTheDocument()
     })
 
     it('コピーライトが表示される', () => {
-      // TODO: 実装後にテストを有効化
-      expect(true).toBe(true)
+      render(
+        <Layout>
+          <div>Content</div>
+        </Layout>
+      )
+      expect(screen.getByTestId('copyright')).toBeInTheDocument()
+      expect(screen.getByTestId('copyright')).toHaveTextContent('© 2025 Hackz-Ptera')
     })
   })
 
   describe('レスポンシブ対応', () => {
     it('モバイル表示で適切なスタイルが適用される', () => {
-      // TODO: 実装後にテストを有効化
-      expect(true).toBe(true)
+      render(
+        <Layout>
+          <div>Content</div>
+        </Layout>
+      )
+      const layout = screen.getByTestId('layout')
+      expect(layout).toHaveClass('min-h-screen', 'flex', 'flex-col')
     })
 
     it('デスクトップ表示で適切なスタイルが適用される', () => {
-      // TODO: 実装後にテストを有効化
-      expect(true).toBe(true)
+      render(
+        <Layout>
+          <div>Content</div>
+        </Layout>
+      )
+      const layout = screen.getByTestId('layout')
+      expect(layout).toHaveClass('min-h-screen', 'flex', 'flex-col')
     })
   })
 })
+
