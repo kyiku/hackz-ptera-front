@@ -18,6 +18,8 @@ import OtpPage from '../pages/OtpPage'
 import CompletePage from '../pages/CompletePage'
 import NotFoundPage from '../pages/NotFoundPage'
 import EmailMorseTestPage from '../pages/EmailMorseTestPage'
+import SlotMachineTestPage from '../pages/SlotMachineTestPage'
+import NameSlotPage from '../pages/NameSlotPage'
 
 /**
  * ルートガード: 認証が必要なルートを保護
@@ -54,6 +56,12 @@ export const AppRoutes = () => {
 
             {/* テストページ */}
             <Route path="/test/email-morse" element={<EmailMorseTestPage />} />
+            <Route path="/test/slot-machine" element={<SlotMachineTestPage />} />
+            {/* スロット名前入力ページ（テスト用、認証不要） */}
+            <Route path="/test/name-slot" element={<NameSlotPage />} />
+
+            {/* スロットマシン名前入力（新規要件定義） */}
+            <Route path="/signup/name-slot" element={<NameSlotPage />} />
 
             {/* 保護されたルート（認証が必要） */}
             <Route

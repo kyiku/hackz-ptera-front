@@ -1,9 +1,10 @@
 /**
- * SlotMachineInput - スロットマシン風名前入力コンポーネント
+ * SlotMachineInput - パチンコ屋風スロットマシン名前入力コンポーネント
  * Issue #31: 名前入力 - スロットマシンUI
  * 
  * 機能:
  * - あ〜Z（ひらがな・カタカナ・アルファベット）がスロットで回転
+ * - シンプルなパチンコ屋風デザイン
  * - ユーザーがストップして文字を選択
  * - 複数のスロットで名前を入力
  */
@@ -65,7 +66,7 @@ const CHARACTERS = [
 type SlotState = 'spinning' | 'stopped'
 
 /**
- * スロットマシン風名前入力コンポーネント
+ * パチンコ屋風スロットマシン名前入力コンポーネント
  */
 export const SlotMachineInput = ({
     value: _value, // 将来の機能で使用予定（初期値の復元など）
@@ -85,6 +86,7 @@ export const SlotMachineInput = ({
     })
     const intervalRefs = useRef<(number | undefined)[]>(Array(maxLength).fill(undefined))
     const currentCharIndices = useRef<number[]>(Array(maxLength).fill(0))
+    const reelRefs = useRef<(HTMLDivElement | null)[]>(Array(maxLength).fill(null))
 
     // スロットを回転
     const startSpinning = useCallback(
@@ -112,7 +114,7 @@ export const SlotMachineInput = ({
                     newSlots[slotIndex] = CHARACTERS[currentCharIndices.current[slotIndex]]
                     return newSlots
                 })
-            }, 100) // 100msごとに回転
+            }, 50) // 50msごとに回転
         },
         [disabled, slotStates]
     )
@@ -147,27 +149,19 @@ export const SlotMachineInput = ({
                 .map((char, idx) => (idx === slotIndex ? selectedChar : char))
                 .join('')
             onChange(newName)
-
-            // 次のスロットを開始（まだ入力可能な場合）
-            if (slotIndex < maxLength - 1) {
-                setTimeout(() => {
-                    startSpinning(slotIndex + 1)
-                }, 200)
-            }
         },
-        [disabled, slotStates, slots, maxLength, onChange, startSpinning]
+        [disabled, slotStates, slots, onChange]
     )
 
-    // 初期化: 最初のスロットを開始
-    useEffect(() => {
-        if (!disabled && slots[0] === '') {
-            // setTimeoutで非同期に実行してsetStateの警告を回避
-            const timer = setTimeout(() => {
-                startSpinning(0)
-            }, 0)
-            return () => clearTimeout(timer)
+    // レバーを引いてすべてのスロットを同時に回転
+    const handleLeverPull = useCallback(() => {
+        if (disabled) return
+
+        // すべてのスロットを同時に回転開始
+        for (let i = 0; i < maxLength; i++) {
+            startSpinning(i)
         }
-    }, [disabled, slots, startSpinning])
+    }, [disabled, maxLength, startSpinning])
 
     // クリーンアップ
     useEffect(() => {
@@ -196,74 +190,141 @@ export const SlotMachineInput = ({
         setSlotStates(Array(maxLength).fill('stopped'))
         currentCharIndices.current = Array(maxLength).fill(0)
         onChange('')
-
-        // 最初のスロットを開始
-        setTimeout(() => {
-            startSpinning(0)
-        }, 100)
-    }, [disabled, maxLength, onChange, startSpinning])
+    }, [disabled, maxLength, onChange])
 
     // 現在の名前を表示
     const currentName = slots.join('').trim()
 
     return (
         <div className={`${className}`} data-testid="slot-machine-input">
-            {/* 入力された名前の表示 */}
-            <div className="text-center mb-6">
-                <p className="text-2xl font-bold text-white mb-2">入力された名前</p>
-                <p className="text-3xl text-blue-400 min-h-[3rem]">
-                    {currentName || <span className="text-gray-500">（未入力）</span>}
-                </p>
+            {/* シンプルな背景 */}
+            <div className="bg-gray-800 border-4 border-gray-600 rounded-lg p-8 mb-6">
+                <div className="flex items-center justify-center gap-6">
+                    {/* 左側のレバー */}
+                    <div className="flex flex-col items-center">
+                        <button
+                            data-testid="lever-button"
+                            onClick={handleLeverPull}
+                            disabled={disabled || slotStates.some(state => state === 'spinning')}
+                            className={`
+                                relative w-14 h-40 bg-gray-700
+                                border-2 border-gray-900 rounded
+                                transition-all duration-150 focus:outline-none
+                                ${disabled || slotStates.some(state => state === 'spinning')
+                                    ? 'opacity-40 cursor-not-allowed'
+                                    : 'cursor-pointer hover:bg-gray-600 active:translate-y-1 active:bg-gray-500'
+                                }
+                            `}
+                            type="button"
+                        >
+                            {/* レバーの握り部分 */}
+                            <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 w-10 h-10 bg-red-700 rounded-full border-2 border-red-900" />
+                            {/* レバーのテキスト */}
+                            <div className="absolute top-2 left-1/2 transform -translate-x-1/2 text-white font-bold text-xs rotate-90 whitespace-nowrap">
+                                PULL
+                            </div>
+                        </button>
+                        <p className="mt-2 text-white text-sm font-bold">レバー</p>
+                    </div>
+
+                    {/* スロットエリア */}
+                    <div className="flex-1">
+                        {/* スロットリール */}
+                        <div className="flex justify-center gap-3">
+                            {slots.map((char, index) => {
+                                const isSpinning = slotStates[index] === 'spinning'
+                                const isStopped = slotStates[index] === 'stopped' && char
+                                
+                                return (
+                                    <div
+                                        key={index}
+                                        className="flex flex-col items-center"
+                                        data-testid={`slot-${index}`}
+                                    >
+                                        {/* リールの外枠 */}
+                                        <div
+                                            className={`
+                                                relative w-24 h-36 bg-black
+                                                border-4 rounded overflow-hidden
+                                                ${isSpinning 
+                                                    ? 'border-white' 
+                                                    : isStopped 
+                                                        ? 'border-white' 
+                                                        : 'border-gray-600'
+                                                }
+                                            `}
+                                        >
+                                            {/* リールの中身 */}
+                                            <div
+                                                ref={(el) => { reelRefs.current[index] = el }}
+                                                className={`
+                                                    absolute inset-0 flex items-center justify-center
+                                                    ${isSpinning ? 'reel-spinning' : ''}
+                                                `}
+                                            >
+                                                {/* 表示文字 */}
+                                                <div
+                                                    className={`
+                                                        text-5xl font-bold
+                                                        ${isSpinning || isStopped
+                                                            ? 'text-white' 
+                                                            : 'text-gray-600'
+                                                        }
+                                                    `}
+                                                >
+                                                    {char || '?'}
+                                                </div>
+                                            </div>
+
+                                            {/* 上部のマスク（リール効果） */}
+                                            <div className="absolute top-0 left-0 right-0 h-6 bg-black z-10 pointer-events-none" />
+                                            {/* 下部のマスク（リール効果） */}
+                                            <div className="absolute bottom-0 left-0 right-0 h-6 bg-black z-10 pointer-events-none" />
+                                            
+                                            {/* 中央のガイドライン */}
+                                            <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-white opacity-50 transform -translate-y-1/2 z-10 pointer-events-none" />
+                                        </div>
+
+                                        {/* ストップボタン */}
+                                        <button
+                                            data-testid={`stop-button-${index}`}
+                                            onClick={() => stopSpinning(index)}
+                                            disabled={disabled || !isSpinning}
+                                            className={`
+                                                mt-3 px-6 py-2 rounded font-bold text-base
+                                                transition-all duration-150 focus:outline-none
+                                                ${isSpinning
+                                                    ? 'bg-red-700 hover:bg-red-800 text-white cursor-pointer border-2 border-red-900'
+                                                    : 'bg-gray-600 text-gray-400 cursor-not-allowed border-2 border-gray-700'
+                                                }
+                                                ${disabled ? 'opacity-50' : ''}
+                                            `}
+                                            type="button"
+                                        >
+                                            STOP
+                                        </button>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            {/* スロットマシン */}
-            <div className="bg-gray-800 rounded-lg p-6 mb-6">
-                <div className="flex justify-center gap-4 flex-wrap">
-                    {slots.map((char, index) => (
-                        <div
-                            key={index}
-                            className="flex flex-col items-center"
-                            data-testid={`slot-${index}`}
-                        >
-                            {/* スロット表示 */}
-                            <div
-                                className={`
-                                    w-20 h-24 bg-gray-900 border-2 rounded-lg
-                                    flex items-center justify-center
-                                    text-4xl font-bold text-white
-                                    ${slotStates[index] === 'spinning' ? 'border-yellow-500 animate-pulse' : 'border-gray-600'}
-                                    ${disabled ? 'opacity-50' : ''}
-                                `}
-                            >
-                                {char || '?'}
-                            </div>
-
-                            {/* ストップボタン */}
-                            <button
-                                data-testid={`stop-button-${index}`}
-                                onClick={() => stopSpinning(index)}
-                                disabled={disabled || slotStates[index] !== 'spinning'}
-                                className={`
-                                    mt-2 px-4 py-2 rounded-lg font-bold text-sm
-                                    transition-colors focus:outline-none focus:ring-2 focus:ring-red-500
-                                    ${slotStates[index] === 'spinning'
-                                        ? 'bg-red-600 hover:bg-red-700 text-white cursor-pointer'
-                                        : 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                                    }
-                                    ${disabled ? 'opacity-50' : ''}
-                                `}
-                                type="button"
-                            >
-                                ストップ
-                            </button>
-                        </div>
-                    ))}
+            {/* 入力された名前の表示 */}
+            <div className="text-center mb-6">
+                <div className="inline-block px-8 py-3 bg-black border-2 border-white rounded">
+                    <p className="text-2xl font-bold text-white">
+                        {currentName || '---'}
+                    </p>
                 </div>
             </div>
 
             {/* 操作説明 */}
-            <div className="text-center text-sm text-gray-400 mb-4">
-                <p>各スロットが回転します。ストップボタンで文字を確定してください。</p>
+            <div className="text-center mb-4">
+                <p className="text-gray-400 text-sm">
+                    レバーを引くと3つのスロットが同時に回転します。STOPボタンで文字を確定してください
+                </p>
             </div>
 
             {/* リセットボタン */}
@@ -273,8 +334,10 @@ export const SlotMachineInput = ({
                     onClick={handleReset}
                     disabled={disabled}
                     className={`
-                        px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg
-                        transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500
+                        px-8 py-2 bg-gray-600 hover:bg-gray-700
+                        text-white rounded font-bold
+                        transition-colors duration-150 focus:outline-none
+                        border-2 border-gray-700
                         ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
                     `}
                     type="button"
@@ -287,4 +350,3 @@ export const SlotMachineInput = ({
 }
 
 export default SlotMachineInput
-

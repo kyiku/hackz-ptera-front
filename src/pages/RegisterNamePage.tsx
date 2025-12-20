@@ -45,7 +45,7 @@ const RegisterNamePage = () => {
                 <SlotMachineInput
                     value={formData.name || ''}
                     onChange={handleNameChange}
-                    maxLength={10}
+                    maxLength={3}
                 />
 
                 {/* 戻るボタン */}
