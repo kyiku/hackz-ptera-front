@@ -369,13 +369,13 @@ export function RotaryDial({ onDigitComplete, disabled = false }: RotaryDialProp
             </div>
 
             {/* 操作説明 */}
-            <div className="text-center mt-6 text-amber-200/70 text-sm">
+            <div className="text-center mt-6 text-gray-500 text-sm">
                 {isDragging ? (
-                    <span className="text-amber-300">
+                    <span className="text-gray-700">
                         ストッパーまで回してください... ({Math.round((rotation / requiredRotation) * 100)}%)
                     </span>
                 ) : isReturning ? (
-                    <span className="text-amber-400">
+                    <span className="text-gray-600">
                         カチカチカチ... ダイヤルが戻っています
                     </span>
                 ) : (
@@ -387,9 +387,9 @@ export function RotaryDial({ onDigitComplete, disabled = false }: RotaryDialProp
 
             {/* 回転状態インジケーター */}
             {isDragging && requiredRotation > 0 && (
-                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-64 h-1 bg-gray-800 rounded-full overflow-hidden">
+                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-64 h-1 bg-gray-200 rounded-full overflow-hidden">
                     <div
-                        className="h-full bg-amber-600 transition-all duration-100"
+                        className="h-full bg-gray-600 transition-all duration-100"
                         style={{ width: `${Math.min((rotation / requiredRotation) * 100, 100)}%` }}
                     />
                 </div>
