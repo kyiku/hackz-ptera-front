@@ -158,11 +158,11 @@ export function CaptchaPage() {
     return (
         <div
             data-testid="captcha-page"
-            className="min-h-screen bg-white flex items-center justify-center p-4"
+            className="min-h-screen bg-stone-50 flex items-center justify-center p-4"
         >
-            <div className="bg-gray-50 border border-gray-200 rounded-2xl shadow-sm p-6 sm:p-8 w-full max-w-4xl">
+            <div className="bg-white border border-stone-200 rounded-sm p-8 sm:p-10 w-full max-w-4xl">
                 {/* タイマー */}
-                <div className="mb-6">
+                <div className="mb-8">
                     <CaptchaTimer
                         key={timerKey}
                         duration={DEFAULT_TIMEOUT_SECONDS}
@@ -173,23 +173,23 @@ export function CaptchaPage() {
                 </div>
 
                 {/* ヘッダー */}
-                <div className="text-center mb-6">
-                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
+                <div className="text-center mb-8">
+                    <h1 className="text-xl text-stone-700 tracking-wide mb-2">
                         ロボットではないことを確認
                     </h1>
-                    <p className="text-gray-500 text-sm">
+                    <p className="text-stone-400 text-sm">
                         画像内の指定されたポイントをクリックしてください
                     </p>
                 </div>
 
                 {/* 残り試行回数 */}
-                <div className="flex justify-between items-center mb-4">
-                    <span className="text-gray-500 text-sm">残り試行回数</span>
+                <div className="flex justify-between items-center mb-6">
+                    <span className="text-stone-400 text-xs tracking-wide">残り試行回数</span>
                     <div className="flex gap-1">
                         {Array.from({ length: MAX_ATTEMPTS }, (_, i) => (
                             <div
                                 key={i}
-                                className={`w-3 h-3 rounded-full ${i < remainingAttempts ? 'bg-green-500' : 'bg-gray-300'
+                                className={`w-2 h-2 rounded-full ${i < remainingAttempts ? 'bg-stone-600' : 'bg-stone-200'
                                     }`}
                             />
                         ))}
@@ -198,8 +198,8 @@ export function CaptchaPage() {
 
                 {/* 説明文 */}
                 {message && captchaState !== 'error' && captchaState !== 'success' && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                        <p className="text-blue-600 font-medium text-center">
+                    <div className="bg-stone-50 border border-stone-200 rounded-sm p-4 mb-6">
+                        <p className="text-stone-600 text-sm text-center">
                             {message}
                         </p>
                     </div>
@@ -217,8 +217,8 @@ export function CaptchaPage() {
 
                 {/* 選択座標表示 */}
                 {selectedPosition && captchaState === 'idle' && (
-                    <div className="bg-gray-100 rounded-lg p-3 mb-4 text-center">
-                        <p className="text-gray-600 text-sm">
+                    <div className="bg-stone-50 rounded-sm p-3 mb-4 text-center">
+                        <p className="text-stone-500 text-xs">
                             選択座標: ({selectedPosition.x}, {selectedPosition.y})
                         </p>
                     </div>
@@ -226,15 +226,15 @@ export function CaptchaPage() {
 
                 {/* エラーメッセージ */}
                 {captchaState === 'error' && (
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                    <div className="bg-red-50 border border-red-200 rounded-sm p-3 mb-4">
                         <p className="text-red-500 text-sm text-center">{message}</p>
                     </div>
                 )}
 
                 {/* 成功メッセージ */}
                 {captchaState === 'success' && (
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
-                        <p className="text-green-600 text-sm text-center">
+                    <div className="bg-emerald-50 border border-emerald-200 rounded-sm p-3 mb-4">
+                        <p className="text-emerald-600 text-sm text-center">
                             {message} 登録ページへ移動します...
                         </p>
                     </div>
@@ -242,7 +242,7 @@ export function CaptchaPage() {
 
                 {/* カウントダウン表示 */}
                 {redirectCountdown !== null && redirectCountdown > 0 && (
-                    <div className="text-amber-600 text-sm text-center mb-4">
+                    <div className="text-stone-500 text-sm text-center mb-4">
                         {redirectCountdown}秒後にリトライ可能...
                     </div>
                 )}
@@ -252,22 +252,19 @@ export function CaptchaPage() {
                     <button
                         onClick={verifyCaptcha}
                         disabled={captchaState === 'verifying' || captchaState === 'loading' || !selectedPosition}
-                        className={`
-              w-full py-3 rounded-lg font-bold text-white transition-colors
-              ${captchaState === 'verifying' || captchaState === 'loading' || !selectedPosition
-                                ? 'bg-gray-600 cursor-not-allowed'
-                                : 'bg-blue-600 hover:bg-blue-700'
-                            }
-            `}
+                        className={`w-full py-4 rounded-sm text-sm tracking-wide transition-colors ${captchaState === 'verifying' || captchaState === 'loading' || !selectedPosition
+                                ? 'bg-stone-200 text-stone-400 cursor-not-allowed'
+                                : 'bg-stone-800 hover:bg-stone-700 text-white'
+                            }`}
                     >
                         {captchaState === 'verifying' ? (
                             <span className="flex items-center justify-center gap-2">
-                                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                <div className="w-4 h-4 border border-white border-t-transparent rounded-full animate-spin" />
                                 検証中...
                             </span>
                         ) : captchaState === 'loading' ? (
                             <span className="flex items-center justify-center gap-2">
-                                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                <div className="w-4 h-4 border border-white border-t-transparent rounded-full animate-spin" />
                                 読み込み中...
                             </span>
                         ) : (
@@ -280,14 +277,14 @@ export function CaptchaPage() {
                 {remainingAttempts <= 0 && redirectCountdown === null && (
                     <button
                         onClick={resetCaptcha}
-                        className="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition-colors"
+                        className="w-full py-4 bg-stone-800 hover:bg-stone-700 text-white text-sm tracking-wide rounded-sm transition-colors"
                     >
                         やり直す
                     </button>
                 )}
 
                 {/* ヘルプテキスト */}
-                <p className="text-gray-500 text-xs text-center mt-4">
+                <p className="text-stone-400 text-xs text-center mt-6">
                     画像が見えにくい場合は更新してください
                 </p>
             </div>

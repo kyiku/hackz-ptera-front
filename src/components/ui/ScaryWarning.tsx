@@ -34,15 +34,15 @@ export const ScaryWarning: React.FC<ScaryWarningProps> = ({
     }[animation]
 
     const levelStyles = {
-        1: 'text-sm text-red-600 dark:text-red-400',
-        2: 'text-base text-red-700 dark:text-red-300 font-semibold',
-        3: 'text-lg text-red-800 dark:text-red-200 font-bold',
+        1: 'text-xs text-stone-500',
+        2: 'text-sm text-stone-600',
+        3: 'text-sm text-stone-700',
     }[level]
 
     const bgStyles = {
         1: '',
-        2: 'bg-red-50 dark:bg-red-900/20 p-2 rounded',
-        3: 'bg-red-100 dark:bg-red-900/40 p-4 rounded-lg border-2 border-red-500',
+        2: 'bg-stone-50 p-3 rounded-sm border border-stone-200',
+        3: 'bg-stone-100 p-4 rounded-sm border border-stone-300',
     }[level]
 
     return (
@@ -53,7 +53,7 @@ export const ScaryWarning: React.FC<ScaryWarningProps> = ({
             aria-live="polite"
         >
             <span
-                className="text-2xl"
+                className="text-lg text-stone-400"
                 data-testid="warning-icon"
                 aria-hidden="true"
             >

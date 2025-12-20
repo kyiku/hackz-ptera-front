@@ -18,16 +18,17 @@ const CompletePage = () => {
     return (
         <div
             data-testid="complete-page"
-            className="min-h-screen bg-white text-gray-800 flex items-center justify-center"
+            className="min-h-screen bg-stone-50 flex items-center justify-center p-4"
         >
-            <div className="text-center max-w-2xl px-4">
-                <h1 className="text-4xl font-bold mb-6 text-red-500">サーバーエラー</h1>
-                <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-6">
-                    <p className="text-lg text-red-600 mb-4">
-                        サーバーエラーが発生しました。お手数ですが最初からやり直してください。
+            <div className="bg-white border border-stone-200 rounded-sm p-10 w-full max-w-lg text-center">
+                <h1 className="text-xl font-light text-stone-700 tracking-wide mb-6">サーバーエラー</h1>
+                <div className="py-6 border-t border-b border-stone-100 mb-6">
+                    <p className="text-stone-600 text-sm leading-relaxed">
+                        サーバーエラーが発生しました。<br />
+                        お手数ですが最初からやり直してください。
                     </p>
                 </div>
-                <p className="text-gray-500 text-sm">
+                <p className="text-stone-400 text-xs">
                     {remainingSeconds}秒後にトップページへリダイレクトします...
                 </p>
             </div>

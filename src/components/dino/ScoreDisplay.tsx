@@ -40,11 +40,11 @@ export function ScoreDisplay({
             {/* 残り距離 */}
             <div className="text-center">
                 {achieved ? (
-                    <div className="text-4xl sm:text-5xl font-bold text-gray-800">
-                        CLEAR!
+                    <div className="text-3xl font-light text-emerald-600 tracking-wide">
+                        CLEAR
                     </div>
                 ) : (
-                    <div className="text-4xl sm:text-5xl font-bold font-mono text-gray-800">
+                    <div className="text-3xl font-light font-mono text-stone-700">
                         残り {scoreRemaining} M
                     </div>
                 )}

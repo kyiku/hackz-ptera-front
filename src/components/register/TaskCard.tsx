@@ -53,19 +53,24 @@ export const TaskCard = ({ task }: TaskCardProps) => {
 
     const displayName = TASK_DISPLAY_NAMES[task.id]
     const isCompleted = task.status === 'completed'
-    const statusIcon = isCompleted ? '○' : '×'
 
     return (
         <button
             data-testid={`task-card-${task.id}`}
             onClick={handleClick}
-            className="bg-gray-50 border border-gray-200 rounded-lg p-4 hover:bg-gray-100 transition-colors text-left w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="bg-white border border-stone-200 rounded-sm p-5 hover:bg-stone-50 transition-colors text-left w-full focus:outline-none focus:ring-1 focus:ring-stone-400 focus:ring-offset-2"
             type="button"
         >
             <div className="flex items-center justify-between">
-                <span className="text-lg font-medium text-gray-800">{displayName}</span>
-                <span className="text-2xl" data-testid={`task-status-${task.id}`}>
-                    {statusIcon}
+                <span className="text-sm text-stone-700 tracking-wide">{displayName}</span>
+                <span data-testid={`task-status-${task.id}`}>
+                    {isCompleted ? (
+                        <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                    ) : (
+                        <div className="w-5 h-5 border border-stone-300 rounded-full" />
+                    )}
                 </span>
             </div>
         </button>

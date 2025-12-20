@@ -1,8 +1,5 @@
 /**
  * QueuePage - 待機列ページ
- * Issue #1: ルーティング設定
- *
- * WebSocket接続状態と待機順位を表示するページ
  */
 import { QueuePosition } from '../components/queue/QueuePosition'
 import { useQueueWebSocket } from '../hooks/useQueueWebSocket'
@@ -22,54 +19,54 @@ export function QueuePage() {
   return (
     <div
       data-testid="queue-page"
-      className="min-h-screen bg-white flex items-center justify-center p-4"
+      className="min-h-screen bg-stone-50 flex items-center justify-center p-4"
     >
-      <div className="bg-gray-50 border border-gray-200 rounded-2xl shadow-sm p-8 w-full max-w-md text-center">
+      <div className="bg-white border border-stone-200 rounded-sm p-10 w-full max-w-md text-center">
         {/* ヘッダー */}
-        <h1 className="text-2xl font-bold text-gray-800 mb-6">
+        <h1 className="text-lg text-stone-700 tracking-wide mb-8">
           待機列
         </h1>
 
         {/* 接続状態表示 */}
         {isConnecting && (
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div className="flex items-center justify-center gap-2">
-              <div className="w-3 h-3 bg-amber-500 rounded-full animate-pulse" />
-              <span className="text-amber-600 text-lg">接続中...</span>
+              <div className="w-2 h-2 bg-stone-400 rounded-full animate-pulse" />
+              <span className="text-stone-500 text-sm">接続中</span>
             </div>
             <div className="flex justify-center">
-              <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+              <div className="w-6 h-6 border border-stone-300 border-t-stone-600 rounded-full animate-spin" />
             </div>
           </div>
         )}
 
-        {/* 待機順位表示エリア - WebSocket経由で更新 */}
+        {/* 待機順位表示エリア */}
         {isConnected && !isMyTurn && (
-          <div className="space-y-6">
+          <div className="space-y-8">
             <QueuePosition
               position={position}
               totalWaiting={totalWaiting}
             />
 
             {/* 推定待機時間 */}
-            <div className="bg-gray-100 rounded-lg p-4">
-              <p className="text-gray-500 text-xs mb-1">推定待機時間</p>
-              <p className="text-gray-800 text-xl font-semibold">
+            <div className="py-4 border-t border-b border-stone-100">
+              <p className="text-xs text-stone-400 mb-1 tracking-wide uppercase">推定待機時間</p>
+              <p className="text-stone-800 text-xl">
                 約 {Math.ceil(position * 1.5)} 分
               </p>
             </div>
 
-            {/* メッセージ表示エリア */}
-            <div className="text-gray-600 text-sm">
+            {/* メッセージ */}
+            <p className="text-stone-500 text-sm">
               順番が来るまでお待ちください
-            </div>
+            </p>
 
-            {/* アニメーション付きインジケーター */}
+            {/* インジケーター */}
             <div className="flex justify-center gap-1">
               {[0, 1, 2].map((i) => (
                 <div
                   key={i}
-                  className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"
+                  className="w-1.5 h-1.5 bg-stone-300 rounded-full animate-bounce"
                   style={{ animationDelay: `${i * 0.2}s` }}
                 />
               ))}
@@ -77,42 +74,37 @@ export function QueuePage() {
           </div>
         )}
 
-        {/* 自分の番が来た時のカウントダウン表示 */}
+        {/* 自分の番 */}
         {isConnected && isMyTurn && (
-          <div className="space-y-6" data-testid="countdown-section">
+          <div className="space-y-8" data-testid="countdown-section">
             <div className="text-center">
-              <p className="text-green-600 text-2xl font-bold mb-4">
-                YOUR TURN!
+              <p className="text-emerald-600 text-sm tracking-wide mb-6">
+                YOUR TURN
               </p>
-              <div className="bg-green-500 rounded-xl p-6 shadow-sm">
-                <p className="text-white text-sm mb-2">ゲーム開始まで</p>
-                <p className="text-white text-6xl font-bold" data-testid="countdown-number">
+              <div className="py-8 border border-emerald-200 bg-emerald-50/50 rounded-sm">
+                <p className="text-xs text-emerald-600 mb-2">ゲーム開始まで</p>
+                <p className="text-emerald-700 text-5xl font-light" data-testid="countdown-number">
                   {countdownSeconds}
                 </p>
-                <p className="text-white text-sm mt-2">秒</p>
+                <p className="text-xs text-emerald-600 mt-2">秒</p>
               </div>
             </div>
 
-            {/* パルスアニメーション */}
-            <div className="flex justify-center">
-              <div className="w-4 h-4 bg-green-500 rounded-full animate-ping" />
-            </div>
-
-            <p className="text-gray-600 text-sm">
-              Dino Run ゲームに移動します...
+            <p className="text-stone-500 text-sm">
+              Dino Run ゲームに移動します
             </p>
           </div>
         )}
 
         {/* エラー状態 */}
         {error && (
-          <div className="space-y-4">
-            <div className="text-red-500 text-lg">
+          <div className="space-y-6">
+            <p className="text-stone-600 text-sm">
               {error}
-            </div>
+            </p>
             <button
               onClick={reconnect}
-              className="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
+              className="px-6 py-3 bg-stone-800 hover:bg-stone-700 text-white text-sm tracking-wide rounded-sm transition-colors"
             >
               再接続
             </button>
@@ -124,4 +116,3 @@ export function QueuePage() {
 }
 
 export default QueuePage
-

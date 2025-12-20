@@ -38,23 +38,23 @@ export interface FailureModalProps {
 const typeConfig = {
     error: {
         icon: 'X',
-        bgColor: 'bg-red-50 dark:bg-red-900/20',
-        borderColor: 'border-red-500',
-        textColor: 'text-red-700 dark:text-red-300',
+        bgColor: 'bg-white',
+        borderColor: 'border-stone-200',
+        textColor: 'text-stone-700',
         title: 'エラー',
     },
     success: {
-        icon: '✅',
-        bgColor: 'bg-green-50 dark:bg-green-900/20',
-        borderColor: 'border-green-500',
-        textColor: 'text-green-700 dark:text-green-300',
+        icon: '',
+        bgColor: 'bg-white',
+        borderColor: 'border-emerald-200',
+        textColor: 'text-emerald-600',
         title: '成功',
     },
     warning: {
         icon: '!',
-        bgColor: 'bg-yellow-50 dark:bg-yellow-900/20',
-        borderColor: 'border-yellow-500',
-        textColor: 'text-yellow-700 dark:text-yellow-300',
+        bgColor: 'bg-white',
+        borderColor: 'border-stone-200',
+        textColor: 'text-stone-600',
         title: '警告',
     },
 }
@@ -109,7 +109,7 @@ export const FailureModal: React.FC<FailureModalProps> = ({
 
     return (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 animate-fadeIn"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/50 animate-fadeIn"
             onClick={handleOverlayClick}
             data-testid="failure-modal-overlay"
             role="dialog"
@@ -117,7 +117,7 @@ export const FailureModal: React.FC<FailureModalProps> = ({
             aria-labelledby="modal-title"
         >
             <div
-                className={`relative max-w-md w-full mx-4 p-6 rounded-lg shadow-xl border-2 ${config.bgColor} ${config.borderColor} animate-scaleIn`}
+                className={`relative max-w-md w-full mx-4 p-8 rounded-sm border ${config.bgColor} ${config.borderColor} animate-scaleIn`}
                 onClick={handleModalClick}
                 data-testid="failure-modal"
             >
@@ -125,22 +125,26 @@ export const FailureModal: React.FC<FailureModalProps> = ({
                 {closeable && onClose && (
                     <button
                         onClick={onClose}
-                        className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                        className="absolute top-4 right-4 text-stone-400 hover:text-stone-600"
                         aria-label="閉じる"
                         data-testid="close-button"
                     >
-                        ✕
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
                     </button>
                 )}
 
                 {/* アイコンとタイトル */}
-                <div className="flex items-center gap-3 mb-4">
-                    <span className="text-4xl" data-testid="modal-icon">
-                        {config.icon}
-                    </span>
+                <div className="flex items-center gap-3 mb-6">
+                    {config.icon && (
+                        <span className="text-2xl text-stone-400" data-testid="modal-icon">
+                            {config.icon}
+                        </span>
+                    )}
                     <h2
                         id="modal-title"
-                        className={`text-xl font-bold ${config.textColor}`}
+                        className={`text-lg font-light tracking-wide ${config.textColor}`}
                         data-testid="modal-title"
                     >
                         {config.title}
@@ -149,7 +153,7 @@ export const FailureModal: React.FC<FailureModalProps> = ({
 
                 {/* メッセージ */}
                 <p
-                    className={`text-base mb-2 ${config.textColor}`}
+                    className="text-sm text-stone-600 mb-2"
                     data-testid="modal-message"
                 >
                     {message}
@@ -158,7 +162,7 @@ export const FailureModal: React.FC<FailureModalProps> = ({
                 {/* 詳細メッセージ */}
                 {detail && (
                     <p
-                        className="text-sm text-gray-600 dark:text-gray-400 mb-4"
+                        className="text-xs text-stone-400 mb-4"
                         data-testid="modal-detail"
                     >
                         {detail}
@@ -168,7 +172,7 @@ export const FailureModal: React.FC<FailureModalProps> = ({
                 {/* リトライ回数 */}
                 {onRetry && (
                     <p
-                        className="text-sm text-gray-600 dark:text-gray-400 mb-4"
+                        className="text-xs text-stone-400 mb-4"
                         data-testid="retry-count"
                     >
                         リトライ回数: {retryCount}/{maxRetries}
@@ -178,7 +182,7 @@ export const FailureModal: React.FC<FailureModalProps> = ({
                 {/* リダイレクトカウントダウン */}
                 {redirectDelay && (
                     <p
-                        className="text-sm text-gray-600 dark:text-gray-400 mb-4"
+                        className="text-xs text-stone-400 mb-4"
                         data-testid="redirect-countdown"
                     >
                         {redirectDelay}秒後にリダイレクトします...
@@ -186,11 +190,11 @@ export const FailureModal: React.FC<FailureModalProps> = ({
                 )}
 
                 {/* アクションボタン */}
-                <div className="flex gap-3 justify-end">
+                <div className="flex gap-3 justify-end mt-6">
                     {canRetry && (
                         <button
                             onClick={onRetry}
-                            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                            className="px-5 py-2 bg-stone-800 text-white text-sm tracking-wide rounded-sm hover:bg-stone-700 transition-colors"
                             data-testid="retry-button"
                         >
                             リトライ
@@ -199,7 +203,7 @@ export const FailureModal: React.FC<FailureModalProps> = ({
                     {!canRetry && onRetry && (
                         <button
                             disabled
-                            className="px-4 py-2 bg-gray-300 text-gray-500 rounded cursor-not-allowed"
+                            className="px-5 py-2 bg-stone-200 text-stone-400 text-sm rounded-sm cursor-not-allowed"
                             data-testid="retry-button-disabled"
                         >
                             リトライ上限
@@ -208,7 +212,7 @@ export const FailureModal: React.FC<FailureModalProps> = ({
                     {closeable && onClose && (
                         <button
                             onClick={onClose}
-                            className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
+                            className="px-5 py-2 border border-stone-300 text-stone-600 text-sm tracking-wide rounded-sm hover:bg-stone-50 transition-colors"
                             data-testid="close-action-button"
                         >
                             閉じる

@@ -172,20 +172,20 @@ export function CaptchaImage({
         >
             {/* ローディング表示 */}
             {loadingState === 'loading' && (
-                <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg">
+                <div className="absolute inset-0 flex items-center justify-center bg-stone-50 rounded-sm">
                     <div className="flex flex-col items-center gap-3">
-                        <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                        <span className="text-gray-500 text-sm">画像を読み込み中...</span>
+                        <div className="w-8 h-8 border border-stone-300 border-t-stone-600 rounded-full animate-spin" />
+                        <span className="text-stone-400 text-xs tracking-wide">画像を読み込み中...</span>
                     </div>
                 </div>
             )}
 
             {/* エラー表示 */}
             {loadingState === 'error' && (
-                <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg">
-                    <div className="flex flex-col items-center gap-3 text-red-500">
-                        <span className="text-4xl">!</span>
-                        <span className="text-sm">画像の読み込みに失敗しました</span>
+                <div className="absolute inset-0 flex items-center justify-center bg-stone-50 rounded-sm">
+                    <div className="flex flex-col items-center gap-3 text-stone-500">
+                        <span className="text-2xl">!</span>
+                        <span className="text-xs">画像の読み込みに失敗しました</span>
                     </div>
                 </div>
             )}
@@ -199,7 +199,7 @@ export function CaptchaImage({
                     ref={imageRef}
                     src={imageUrl}
                     alt="CAPTCHA画像"
-                    className="w-full h-auto rounded-lg"
+                    className="w-full h-auto rounded-sm border border-stone-200"
                     style={{ aspectRatio: `${IMAGE_WIDTH}/${IMAGE_HEIGHT}` }}
                     onLoad={handleImageLoad}
                     onError={handleImageError}
@@ -220,17 +220,15 @@ export function CaptchaImage({
                                 key={i}
                                 onClick={() => handleGridCellClick(i)}
                                 disabled={disabled}
-                                className={`
-                  border border-white/30 transition-all
-                  ${selectedGridCells.has(i)
-                                        ? 'bg-blue-500/50 border-blue-400'
+                                className={`border border-white/30 transition-all ${selectedGridCells.has(i)
+                                        ? 'bg-stone-800/50 border-stone-600'
                                         : 'hover:bg-white/10'
-                                    }
-                  ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}
-                `}
+                                    } ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                             >
                                 {selectedGridCells.has(i) && (
-                                    <span className="text-white text-2xl">OK</span>
+                                    <svg className="w-6 h-6 mx-auto text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </svg>
                                 )}
                             </button>
                         ))}
@@ -242,29 +240,31 @@ export function CaptchaImage({
                     <button
                         key={pos.id}
                         onClick={(e) => handleMarkerClick(e, pos.id)}
-                        className="absolute w-6 h-6 -translate-x-1/2 -translate-y-1/2 
-                       bg-red-500 border-2 border-white rounded-full 
-                       shadow-lg hover:bg-red-600 transition-colors
-                       flex items-center justify-center text-white text-xs font-bold"
+                        className="absolute w-5 h-5 -translate-x-1/2 -translate-y-1/2
+                       bg-stone-800 border border-white rounded-full
+                       hover:bg-stone-700 transition-colors
+                       flex items-center justify-center text-white text-xs"
                         style={{
                             left: `${pos.displayX}%`,
                             top: `${pos.displayY}%`,
                         }}
                         title={`座標: (${pos.x}, ${pos.y}) - クリックで削除`}
                     >
-                        ×
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
                     </button>
                 ))}
             </div>
 
             {/* 選択数表示 */}
             {loadingState === 'loaded' && (
-                <div className="mt-2 flex justify-between items-center text-sm text-gray-500">
+                <div className="mt-3 flex justify-between items-center text-xs text-stone-400">
                     <span>
-                        クリックで位置を選択（クリックで削除）
+                        クリックで位置を選択
                     </span>
                     <span>
-                        {showGrid ? selectedGridCells.size : positions.length} / {maxSelections} 選択中
+                        {showGrid ? selectedGridCells.size : positions.length} / {maxSelections}
                     </span>
                 </div>
             )}
