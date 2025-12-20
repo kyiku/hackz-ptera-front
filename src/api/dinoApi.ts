@@ -5,12 +5,12 @@
  */
 
 // API Base URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api'
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 
 // リクエスト型
 export interface GameResultRequest {
+    result: 'clear' | 'gameover'
     score: number
-    survived: boolean
 }
 
 // 成功レスポンス型
@@ -56,7 +56,7 @@ export class DinoApiError extends Error {
 export async function submitGameResult(
     request: GameResultRequest
 ): Promise<GameResultResponse> {
-    const url = `${API_BASE_URL}/game/dino/result`
+    const url = `${API_BASE_URL}/api/game/dino/result`
 
     try {
         const response = await fetch(url, {
@@ -110,11 +110,11 @@ export async function submitGameResultMock(
     // 1秒遅延をシミュレート
     await new Promise(resolve => setTimeout(resolve, 1000))
 
-    if (request.survived) {
+    if (request.result === 'clear') {
         // 成功レスポンス
         return {
             error: false,
-            next_stage: 'captcha',
+            next_stage: 'register',
             message: 'ゲームクリア！次のステージへ進みます。',
         }
     } else {

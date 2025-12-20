@@ -18,7 +18,6 @@ import {
     verifyCaptchaMock,
     isVerifySuccess,
     isVerifyFinalFailure,
-    saveCaptchaToken,
 } from '../api/captchaApi'
 import type { CaptchaVerifyResponse } from '../api/captchaApi'
 
@@ -47,7 +46,7 @@ export function CaptchaPage() {
         try {
             const response = await getCaptchaImageMock()
             setImageUrl(response.image_url)
-            setMessage(response.message)
+            setMessage('画像内の特定のポイントをクリックしてください。')
             setCaptchaState('idle')
         } catch {
             setCaptchaState('error')
@@ -90,13 +89,12 @@ export function CaptchaPage() {
             })
 
             if (isVerifySuccess(response)) {
-                // 成功: トークン保存して次のページへ
+                // 成功: 次のステージへ遷移
                 setCaptchaState('success')
                 setMessage(response.message)
-                saveCaptchaToken(response.token)
 
                 setTimeout(() => {
-                    navigate('/register')
+                    navigate(`/${response.next_stage}`)
                 }, 2000)
             } else if (isVerifyFinalFailure(response)) {
                 // 最終失敗: リダイレクトカウントダウン

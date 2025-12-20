@@ -87,11 +87,8 @@ export function useQueueWebSocket(): UseQueueWebSocketReturn {
                 setIsConnecting(false)
                 setError(null)
 
-                // セッションID送信（あれば）
-                const sessionId = sessionStorage.getItem('sessionId')
-                if (sessionId) {
-                    ws.send(JSON.stringify({ type: 'session', sessionId }))
-                }
+                // セッション管理はCookieで行われるため、
+                // sessionStorageからのセッションID送信は不要
 
                 // キープアライブping開始
                 pingIntervalRef.current = window.setInterval(() => {

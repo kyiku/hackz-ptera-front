@@ -5,7 +5,7 @@
  */
 
 // API Base URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api'
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 
 // --- 型定義 ---
 
@@ -13,7 +13,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || '/api'
 export interface CaptchaGenerateResponse {
     error: false
     image_url: string
-    message: string
+    target_image_url: string
 }
 
 // CAPTCHA検証リクエスト
@@ -25,7 +25,7 @@ export interface CaptchaVerifyRequest {
 // CAPTCHA検証成功レスポンス
 export interface CaptchaVerifySuccessResponse {
     error: false
-    token: string
+    next_stage: string
     message: string
 }
 
@@ -74,12 +74,16 @@ export class CaptchaApiError extends Error {
  * GET /api/captcha/generate
  */
 export async function getCaptchaImage(): Promise<CaptchaGenerateResponse> {
-    const url = `${API_BASE_URL}/captcha/generate`
+    const url = `${API_BASE_URL}/api/captcha/generate`
 
     try {
         const response = await fetch(url, {
-            method: 'GET',
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
             credentials: 'include',
+            body: JSON.stringify({}),
         })
 
         if (!response.ok) {
@@ -108,7 +112,7 @@ export async function getCaptchaImage(): Promise<CaptchaGenerateResponse> {
 export async function verifyCaptcha(
     request: CaptchaVerifyRequest
 ): Promise<CaptchaVerifyResponse> {
-    const url = `${API_BASE_URL}/captcha/verify`
+    const url = `${API_BASE_URL}/api/captcha/verify`
 
     try {
         const response = await fetch(url, {
@@ -161,7 +165,7 @@ export async function getCaptchaImageMock(): Promise<CaptchaGenerateResponse> {
     return {
         error: false,
         image_url: `https://picsum.photos/seed/${Date.now()}/1024/768`,
-        message: '画像内の特定のポイントをクリックしてください。',
+        target_image_url: `https://picsum.photos/seed/${Date.now() + 1}/100/100`,
     }
 }
 
@@ -183,7 +187,7 @@ export async function verifyCaptchaMock(
     if (isCorrect) {
         return {
             error: false,
-            token: `captcha_token_${Date.now()}`,
+            next_stage: 'registering',
             message: '認証に成功しました！',
         }
     }

@@ -13,7 +13,7 @@ import { ObstacleManager } from '../components/dino/Obstacle'
 import { checkCollision } from '../components/dino/CollisionDetector'
 import { ScoreDisplay } from '../components/dino/ScoreDisplay'
 import { TARGET_SCORE, isTimeout, isTargetAchieved } from '../components/dino/scoreUtils'
-import { submitGameResultMock } from '../api/dinoApi'
+import { submitGameResult } from '../api/dinoApi'
 import type { GameResultResponse } from '../api/dinoApi'
 
 type GameState = 'ready' | 'playing' | 'gameover' | 'success' | 'submitting'
@@ -50,14 +50,14 @@ export function DinoPage() {
     }, [])
 
     // API結果送信
-    const submitResult = useCallback(async (survived: boolean) => {
+    const submitResult = useCallback(async (cleared: boolean) => {
         setGameState('submitting')
         setApiError(null)
 
         try {
-            const response: GameResultResponse = await submitGameResultMock({
+            const response: GameResultResponse = await submitGameResult({
+                result: cleared ? 'clear' : 'gameover',
                 score: scoreRef.current,
-                survived,
             })
 
             setApiMessage(response.message)
