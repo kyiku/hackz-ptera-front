@@ -92,31 +92,31 @@ export const CalcOtpDisplay = ({
     return (
         <div
             data-testid="calc-otp-display"
-            className="w-full max-w-2xl mx-auto p-6"
+            className="w-full max-w-2xl mx-auto px-6 py-10"
         >
             {/* 問題表示エリア */}
-            <div className="mb-8 p-8 bg-white rounded-lg shadow-md">
-                <h2 className="text-lg font-semibold text-gray-700 mb-6 text-center">
+            <div className="mb-12 py-10 px-8 bg-white border border-stone-200 rounded-sm">
+                <p className="text-sm text-stone-500 mb-8 text-center tracking-wide">
                     次の問題を解いてください
-                </h2>
+                </p>
                 <div
                     ref={mathRef}
-                    className="text-xl text-center text-gray-800 min-h-[60px] flex items-center justify-center overflow-x-auto"
+                    className="text-xl text-center text-stone-800 min-h-[60px] flex items-center justify-center overflow-x-auto"
                     data-testid="problem-display"
                 />
                 {parsedProblem.instruction && (
-                    <p className="text-lg text-center text-gray-700 mt-6">
+                    <p className="text-base text-center text-stone-600 mt-8">
                         {parsedProblem.instruction}
                     </p>
                 )}
             </div>
 
             {/* 回答入力フォーム */}
-            <form onSubmit={handleSubmit} className="space-y-4 max-w-md mx-auto">
+            <form onSubmit={handleSubmit} className="space-y-6 max-w-sm mx-auto">
                 <div>
                     <label
                         htmlFor="otp-answer"
-                        className="block text-sm font-medium text-gray-700 mb-2 text-center"
+                        className="block text-xs text-stone-500 mb-3 text-center tracking-wide uppercase"
                     >
                         6桁の答えを入力
                     </label>
@@ -131,7 +131,7 @@ export const CalcOtpDisplay = ({
                         onChange={handleInputChange}
                         disabled={isSubmitting || disabled}
                         placeholder="000000"
-                        className="w-full px-4 py-3 text-2xl text-center font-mono tracking-widest border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                        className="w-full px-4 py-4 text-2xl text-center font-mono tracking-[0.3em] bg-white border border-stone-300 rounded-sm focus:border-stone-500 focus:outline-none transition-colors disabled:bg-stone-50 disabled:text-stone-400 disabled:cursor-not-allowed"
                         data-testid="otp-input"
                         autoComplete="off"
                     />
@@ -140,13 +140,13 @@ export const CalcOtpDisplay = ({
                 {/* エラーメッセージ */}
                 {errorMessage && (
                     <div
-                        className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm text-center"
+                        className="py-3 px-4 border border-red-200 bg-red-50/50 text-red-700 text-sm text-center rounded-sm"
                         data-testid="error-message"
                     >
                         {errorMessage}
                         {attemptsRemaining !== undefined && (
-                            <span className="block mt-1 font-semibold">
-                                残り試行回数: {attemptsRemaining}回
+                            <span className="block mt-1 text-red-600">
+                                残り {attemptsRemaining} 回
                             </span>
                         )}
                     </div>
@@ -156,13 +156,13 @@ export const CalcOtpDisplay = ({
                 <button
                     type="submit"
                     disabled={answer.length !== 6 || isSubmitting || disabled}
-                    className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                    className="w-full py-4 px-4 bg-stone-800 hover:bg-stone-700 text-white text-sm tracking-wide rounded-sm transition-colors disabled:bg-stone-300 disabled:cursor-not-allowed focus:outline-none focus:ring-1 focus:ring-stone-500 focus:ring-offset-2"
                     data-testid="submit-button"
                 >
                     {isSubmitting ? (
                         <span className="flex items-center justify-center">
                             <svg
-                                className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                                className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
                                 xmlns="http://www.w3.org/2000/svg"
                                 fill="none"
                                 viewBox="0 0 24 24"
@@ -181,7 +181,7 @@ export const CalcOtpDisplay = ({
                                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                                 />
                             </svg>
-                            確認中...
+                            確認中
                         </span>
                     ) : (
                         '送信'
@@ -190,7 +190,7 @@ export const CalcOtpDisplay = ({
             </form>
 
             {/* ヒント */}
-            <p className="mt-4 text-sm text-gray-500 text-center">
+            <p className="mt-10 text-xs text-stone-400 text-center">
                 f(x)を微分して、指定されたxの値を代入してください
             </p>
         </div>

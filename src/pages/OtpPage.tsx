@@ -35,7 +35,7 @@ const OtpPage = () => {
             setAttemptsRemaining(undefined)
         } catch (error) {
             console.error('Failed to fetch OTP problem:', error)
-            setLoadError('問題の取得に失敗しました。再度お試しください。')
+            setLoadError('問題の取得に失敗しました')
         } finally {
             setIsLoading(false)
         }
@@ -75,7 +75,7 @@ const OtpPage = () => {
             }
         } catch (error) {
             console.error('OTP verification failed:', error)
-            setErrorMessage('認証に失敗しました。再度お試しください。')
+            setErrorMessage('認証に失敗しました')
         } finally {
             setIsSubmitting(false)
         }
@@ -86,11 +86,11 @@ const OtpPage = () => {
         return (
             <div
                 data-testid="otp-page"
-                className="min-h-screen bg-gray-50 flex items-center justify-center"
+                className="min-h-screen bg-stone-50 flex items-center justify-center"
             >
                 <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4" />
-                    <p className="text-gray-600">問題を読み込み中...</p>
+                    <div className="w-6 h-6 border border-stone-300 border-t-stone-600 rounded-full animate-spin mx-auto mb-4" />
+                    <p className="text-sm text-stone-500">読み込み中</p>
                 </div>
             </div>
         )
@@ -101,13 +101,13 @@ const OtpPage = () => {
         return (
             <div
                 data-testid="otp-page"
-                className="min-h-screen bg-gray-50 flex items-center justify-center"
+                className="min-h-screen bg-stone-50 flex items-center justify-center"
             >
                 <div className="text-center">
-                    <p className="text-red-600 mb-4">{loadError}</p>
+                    <p className="text-stone-600 mb-6">{loadError}</p>
                     <button
                         onClick={fetchProblem}
-                        className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                        className="px-6 py-3 bg-stone-800 hover:bg-stone-700 text-white text-sm tracking-wide rounded-sm transition-colors"
                         type="button"
                     >
                         再試行
@@ -122,12 +122,27 @@ const OtpPage = () => {
         return (
             <div
                 data-testid="otp-page"
-                className="min-h-screen bg-gray-50 flex items-center justify-center"
+                className="min-h-screen bg-stone-50 flex items-center justify-center"
             >
                 <div className="text-center">
-                    <div className="text-6xl mb-4">🎉</div>
-                    <h1 className="text-4xl font-bold text-green-600 mb-4">正解！</h1>
-                    <p className="text-gray-600">登録画面に移動します...</p>
+                    {/* シンプルなチェックマーク */}
+                    <div className="w-16 h-16 mx-auto mb-6 border-2 border-emerald-600 rounded-full flex items-center justify-center">
+                        <svg
+                            className="w-8 h-8 text-emerald-600"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M5 13l4 4L19 7"
+                            />
+                        </svg>
+                    </div>
+                    <h1 className="text-2xl text-stone-800 mb-2">正解</h1>
+                    <p className="text-sm text-stone-500">登録画面に移動します</p>
                 </div>
             </div>
         )
@@ -136,21 +151,28 @@ const OtpPage = () => {
     return (
         <div
             data-testid="otp-page"
-            className="min-h-screen bg-gray-50 flex items-center justify-center py-8"
+            className="min-h-screen bg-stone-50 flex flex-col"
         >
-            <div className="w-full max-w-lg">
-                <h1 className="text-2xl font-bold text-center text-gray-800 mb-6">
-                    OTP認証
+            {/* ヘッダー */}
+            <header className="py-8 text-center">
+                <h1 className="text-lg text-stone-700 tracking-wide">
+                    本人確認
                 </h1>
-                <CalcOtpDisplay
-                    problemLatex={problemLatex}
-                    onSubmit={handleSubmit}
-                    isSubmitting={isSubmitting}
-                    errorMessage={errorMessage}
-                    attemptsRemaining={attemptsRemaining}
-                    disabled={attemptsRemaining === 0}
-                />
-            </div>
+            </header>
+
+            {/* メインコンテンツ */}
+            <main className="flex-1 flex items-start justify-center">
+                <div className="w-full max-w-2xl">
+                    <CalcOtpDisplay
+                        problemLatex={problemLatex}
+                        onSubmit={handleSubmit}
+                        isSubmitting={isSubmitting}
+                        errorMessage={errorMessage}
+                        attemptsRemaining={attemptsRemaining}
+                        disabled={attemptsRemaining === 0}
+                    />
+                </div>
+            </main>
         </div>
     )
 }
