@@ -45,6 +45,7 @@ export interface CaptchaVerifyFailureResponse {
     message: string
     attempts_remaining: number
     new_image_url: string
+    new_target_image_url: string
 }
 
 // CAPTCHA検証最終失敗レスポンス（3回目）
@@ -235,6 +236,7 @@ export async function verifyCaptchaMock(
         message: `不正解です。残り${mockAttemptsRemaining}回`,
         attempts_remaining: mockAttemptsRemaining,
         new_image_url: `https://picsum.photos/seed/${Date.now()}/1024/768`,
+        new_target_image_url: `https://picsum.photos/seed/${Date.now() + 1}/100/100`,
     }
 }
 

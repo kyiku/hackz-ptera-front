@@ -1,8 +1,7 @@
 /**
- * OTP API - 魚OTP認証API
- * Issue #23: 魚OTP - API連携（送信・検証）
- * 
- * 魚画像の取得と回答検証
+ * OTP API - 微分OTP認証API
+ *
+ * 微分問題の取得と回答検証
  */
 
 // API呼び出しは直接fetchを使用（エラーレスポンスも正常なレスポンスとして扱うため）
@@ -22,7 +21,7 @@ export interface OtpSendRequest {
  */
 export interface OtpSendResponse {
     error: false
-    image_url: string
+    problem_latex: string
     message: string
 }
 
@@ -30,7 +29,7 @@ export interface OtpSendResponse {
  * OTP検証リクエスト
  */
 export interface OtpVerifyRequest {
-    answer: string // 魚の名前（ひらがな/カタカナ許容）
+    answer: string // 6桁の数値（文字列として送信）
 }
 
 /**
@@ -48,7 +47,7 @@ export interface OtpVerifyFailureResponse {
     error: true
     message: string
     attempts_remaining: number
-    new_image_url: string
+    new_problem_latex: string
 }
 
 /**
@@ -90,7 +89,7 @@ export class OtpApiError extends Error {
 // --- API関数 ---
 
 /**
- * OTP魚画像を取得
+ * OTP微分問題を取得
  * POST /api/otp/send
  */
 export async function sendOtp(): Promise<OtpSendResponse> {
@@ -197,6 +196,7 @@ export function isVerifyRetryableFailure(
 // --- モック関数（フロントエンド開発用） ---
 
 let mockAttemptsRemaining = 3
+let mockOtp = 0
 
 /**
  * OTP送信（モック）
@@ -206,17 +206,26 @@ export async function sendOtpMock(): Promise<OtpSendResponse> {
     await new Promise(resolve => setTimeout(resolve, 500))
 
     mockAttemptsRemaining = 3
+    // 6桁OTPを生成
+    mockOtp = Math.floor(Math.random() * 900000) + 100000
+
+    // モック問題を生成
+    const a = Math.floor(Math.random() * 5) + 1
+    const k = [10, 20, 50, 100][Math.floor(Math.random() * 4)]
+    const b = mockOtp - 2 * a * k
+    const c = Math.floor(Math.random() * 100) + 1
+
+    const problemLatex = `f(x) = ${a === 1 ? '' : a}x^2 + ${b}x + ${c} を微分し、x = ${k} での値を求めよ`
 
     return {
         error: false,
-        image_url: `https://picsum.photos/seed/fish-${Date.now()}/400/300`,
-        message: '魚の名前を入力してください。ひらがな・カタカナ両方で入力できます。',
+        problem_latex: problemLatex,
+        message: '微分問題を解いて6桁の答えを入力してください',
     }
 }
 
 /**
  * OTP検証（モック）
- * 正解は「さば」または「サバ」
  */
 export async function verifyOtpMock(
     request: OtpVerifyRequest
@@ -224,18 +233,13 @@ export async function verifyOtpMock(
     // 遅延をシミュレート
     await new Promise(resolve => setTimeout(resolve, 1000))
 
-    // ひらがな/カタカナの正規化（「さば」「サバ」を同じとみなす）
-    const normalizedAnswer = request.answer.toLowerCase().trim()
-    const correctAnswers = ['さば', 'サバ', 'saba']
-
-    const isCorrect = correctAnswers.some(
-        correct => normalizedAnswer === correct.toLowerCase()
-    )
+    const answer = parseInt(request.answer, 10)
+    const isCorrect = answer === mockOtp
 
     if (isCorrect) {
         return {
             error: false,
-            message: '認証に成功しました！',
+            message: '正解です！登録が完了しました',
         }
     }
 
@@ -244,16 +248,24 @@ export async function verifyOtpMock(
     if (mockAttemptsRemaining <= 0) {
         return {
             error: true,
-            message: '試行回数の上限に達しました。',
+            message: '3回失敗しました。待機列の最後尾からやり直しです。',
             redirect_delay: 3,
         }
     }
 
+    // 新しい問題を生成
+    mockOtp = Math.floor(Math.random() * 900000) + 100000
+    const a = Math.floor(Math.random() * 5) + 1
+    const k = [10, 20, 50, 100][Math.floor(Math.random() * 4)]
+    const b = mockOtp - 2 * a * k
+    const c = Math.floor(Math.random() * 100) + 1
+
+    const newProblemLatex = `f(x) = ${a === 1 ? '' : a}x^2 + ${b}x + ${c} を微分し、x = ${k} での値を求めよ`
+
     return {
         error: true,
-        message: `不正解です。残り${mockAttemptsRemaining}回`,
+        message: `不正解です。もう一度試してください`,
         attempts_remaining: mockAttemptsRemaining,
-        new_image_url: `https://picsum.photos/seed/fish-${Date.now()}/400/300`,
+        new_problem_latex: newProblemLatex,
     }
 }
-

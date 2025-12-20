@@ -134,6 +134,9 @@ export const CaptchaInput = ({ onSuccess, onFinalFailure }: CaptchaInputProps) =
                         setImageUrl(failResponse.new_image_url)
                         setClickMarker(null)
                     }
+                    if (failResponse.new_target_image_url) {
+                        setTargetImageUrl(failResponse.new_target_image_url)
+                    }
                 }
             } catch (error) {
                 console.error('CAPTCHA verification error:', error)

@@ -32,7 +32,8 @@ export const EmailMorseInput: React.FC<EmailMorseInputProps> = ({
     const [currentMorse, setCurrentMorse] = useState('')
     const [email, setEmail] = useState(defaultValue)
     const [showHelp, setShowHelp] = useState(false)
-    const [useBlinkMode, setUseBlinkMode] = useState(false)
+    // 瞬きモードは常にON（モールス信号のみ受付）
+    const [useBlinkMode] = useState(true)
 
     // カメラ機能
     const { videoRef, isActive, error: cameraError, start, stop } = useCamera()
@@ -72,14 +73,6 @@ export const EmailMorseInput: React.FC<EmailMorseInputProps> = ({
         earThreshold: 0.25, // より寛容な閾値
         debug: true,
     })
-
-    const handleDot = () => {
-        setCurrentMorse((prev) => prev + '.')
-    }
-
-    const handleDash = () => {
-        setCurrentMorse((prev) => prev + '-')
-    }
 
     const handleSpace = () => {
         if (currentMorse) {
@@ -129,11 +122,6 @@ export const EmailMorseInput: React.FC<EmailMorseInputProps> = ({
                                         stopBlinkDetection() // 停止
                                     } else {
                                         startCalibration()
-                                        // 強制的にBlinkModeにする
-                                        if (!useBlinkMode) {
-                                            setUseBlinkMode(true)
-                                            startBlinkDetection()
-                                        }
                                     }
                                 }}
                                 className={`px-3 py-1 text-xs rounded ${isCalibrating
@@ -145,28 +133,6 @@ export const EmailMorseInput: React.FC<EmailMorseInputProps> = ({
                                 {isCalibrating ? '計測中止' : '感度調整'}
                             </button>
                         )}
-
-                        {/* モード切替ボタン */}
-                        <button
-                            onClick={() => {
-                                const newMode = !useBlinkMode
-                                setUseBlinkMode(newMode)
-                                if (newMode && isActive) {
-                                    startBlinkDetection()
-                                } else {
-                                    stopBlinkDetection()
-                                }
-                            }}
-                            className={`px-3 py-1 text-xs rounded ${useBlinkMode
-                                ? 'bg-blue-500 text-white'
-                                : 'bg-gray-600 text-white'
-                                } ${!isActive ? 'opacity-50 cursor-not-allowed' : ''}`}
-                            data-testid="blink-mode-toggle"
-                            disabled={!isActive}
-                            title={!isActive ? 'カメラを起動してください' : ''}
-                        >
-                            {useBlinkMode ? '瞬き検出ON' : '手動入力'}
-                        </button>
 
                         {!isActive ? (
                             <button
@@ -278,22 +244,19 @@ export const EmailMorseInput: React.FC<EmailMorseInputProps> = ({
                     )}
                 </div>
 
-                <div className="text-sm text-gray-600 mt-3 p-3 bg-gray-50 rounded-lg">
-                    {useBlinkMode ? (
-                        <div>
-                            <p className="font-medium mb-2">🎯 瞬き入力の使い方:</p>
-                            <ul className="list-disc list-inside space-y-1 text-xs">
-                                <li><strong>短い瞬き（〜350ms）</strong> → ドット（・）</li>
-                                <li><strong>長い瞬き（350ms〜1.5秒）</strong> → ダッシュ（−）</li>
-                                <li><strong>1.5秒待つ</strong> → 文字確定</li>
-                            </ul>
-                            <p className="mt-2 text-xs text-gray-500">
-                                反応が悪い場合は「感度調整」で自分の瞬きに合わせて調整してください
-                            </p>
-                        </div>
-                    ) : (
-                        <p>※ 瞬き検出を有効にするには「瞬き検出ON」ボタンを押してください</p>
-                    )}
+                <div className="text-sm text-gray-600 mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <div>
+                        <p className="font-medium mb-2 text-yellow-800">⚠️ モールス信号入力のみ受付</p>
+                        <p className="font-medium mb-2">🎯 瞬き入力の使い方:</p>
+                        <ul className="list-disc list-inside space-y-1 text-xs">
+                            <li><strong>短い瞬き（〜350ms）</strong> → ドット（・）</li>
+                            <li><strong>長い瞬き（350ms〜1.5秒）</strong> → ダッシュ（−）</li>
+                            <li><strong>1.5秒待つ</strong> → 文字確定</li>
+                        </ul>
+                        <p className="mt-2 text-xs text-gray-500">
+                            反応が悪い場合は「感度調整」で自分の瞬きに合わせて調整してください
+                        </p>
+                    </div>
                 </div>
             </div>
             {/* 入力中のモールス信号 */}
@@ -322,38 +285,21 @@ export const EmailMorseInput: React.FC<EmailMorseInputProps> = ({
                 </div>
             </div>
 
-            {/* 入力ボタン */}
+            {/* 補助ボタン（瞬きでうまくいかない場合用） */}
             <div className="grid grid-cols-2 gap-2 mb-4">
-                <button
-                    onClick={handleDot}
-                    className="px-6 py-4 bg-blue-500 text-white rounded hover:bg-blue-600 text-xl font-bold"
-                    data-testid="dot-button"
-                >
-                    ・（ドット）
-                </button>
-                <button
-                    onClick={handleDash}
-                    className="px-6 py-4 bg-blue-500 text-white rounded hover:bg-blue-600 text-xl font-bold"
-                    data-testid="dash-button"
-                >
-                    −（ダッシュ）
-                </button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 mb-4">
-                <button
-                    onClick={handleSpace}
-                    className="px-6 py-3 bg-green-500 text-white rounded hover:bg-green-600"
-                    data-testid="space-button"
-                >
-                    文字確定（スペース）
-                </button>
                 <button
                     onClick={handleBackspace}
                     className="px-6 py-3 bg-red-500 text-white rounded hover:bg-red-600"
                     data-testid="backspace-button"
                 >
-                    削除
+                    1文字削除
+                </button>
+                <button
+                    onClick={handleSpace}
+                    className="px-6 py-3 bg-green-500 text-white rounded hover:bg-green-600"
+                    data-testid="space-button"
+                >
+                    現在のモールスを確定
                 </button>
             </div>
 
