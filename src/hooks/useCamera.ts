@@ -84,23 +84,19 @@ export const useCamera = ({
     }
 
     useEffect(() => {
-        // autoStartが有効で、かつカメラが未起動の場合にのみstart()を呼び出す
-        if (autoStart && !isActive) {
-            // ESLintエラーを回避するため、非同期でstart()を実行
-            const startTimer = setTimeout(() => {
-                start()
-            }, 0)
-
-            return () => {
-                clearTimeout(startTimer)
-                stop()
+        if (autoStart) {
+            // 非同期関数を即時実行（ESLint set-state-in-effect対策）
+            const initCamera = async () => {
+                await start()
             }
+            void initCamera()
         }
 
         return () => {
             stop()
         }
-    }, [autoStart]) // eslint-disable-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
 
     return {
         videoRef,

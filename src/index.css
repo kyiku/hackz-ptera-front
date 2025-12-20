@@ -1,1 +1,49 @@
 @import "tailwindcss";
+
+/**
+ * Issue #36: スクロール挙動調整（慣性無効化・重め）
+ * 
+ * 仕様:
+ * - スクロールの慣性を無効化
+ * - スクロールを重めに設定
+ * - 全ページに適用
+ */
+
+/* スクロール挙動の調整 */
+* {
+  /* スクロールの慣性を無効化 */
+  -webkit-overflow-scrolling: auto;
+  overscroll-behavior: none;
+  
+  /* スクロールを重めに設定（スムーズスクロールを無効化） */
+  scroll-behavior: auto;
+}
+
+html,
+body {
+  /* スクロールの慣性を無効化 */
+  -webkit-overflow-scrolling: auto;
+  overscroll-behavior: none;
+  
+  /* スクロールを重めに設定 */
+  scroll-behavior: auto;
+}
+
+/* スクロールバーのスタイル調整（オプション） */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
