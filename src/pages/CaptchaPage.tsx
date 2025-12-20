@@ -175,7 +175,7 @@ export function CaptchaPage() {
                 {/* ヘッダー */}
                 <div className="text-center mb-6">
                     <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
-                        🤖 ロボットではないことを確認
+                        ロボットではないことを確認
                     </h1>
                     <p className="text-gray-500 text-sm">
                         画像内の指定されたポイントをクリックしてください
@@ -235,7 +235,7 @@ export function CaptchaPage() {
                 {captchaState === 'success' && (
                     <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
                         <p className="text-green-600 text-sm text-center">
-                            ✓ {message} 登録ページへ移動します...
+                            {message} 登録ページへ移動します...
                         </p>
                     </div>
                 )}

@@ -80,7 +80,7 @@ export function QueuePosition({ position, totalWaiting }: QueuePositionProps) {
             {isNext && (
                 <div className="text-center animate-pulse">
                     <span className="text-green-600 font-bold text-lg">
-                        🎉 まもなくあなたの番です！
+                        まもなくあなたの番です！
                     </span>
                 </div>
             )}

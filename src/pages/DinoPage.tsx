@@ -395,14 +395,14 @@ export function DinoPage() {
                 {gameState === 'gameover' && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/90">
                         <p className="text-gray-700 text-3xl font-medium mb-2">
-                            {isTimeoutFail ? '⏰ タイムアウト' : 'GAME OVER'}
+                            {isTimeoutFail ? 'TIME OUT' : 'GAME OVER'}
                         </p>
                         <p className="text-gray-800 text-xl mb-2">
                             スコア: {score}
                         </p>
                         {isNewHighScore && (
                             <p className="text-gray-600 text-lg font-medium mb-2">
-                                🏆 NEW HIGH SCORE!
+                                NEW HIGH SCORE!
                             </p>
                         )}
                         {apiMessage && (
@@ -412,7 +412,7 @@ export function DinoPage() {
                         )}
                         {apiError && (
                             <p className="text-red-500 text-sm mb-2">
-                                ⚠️ {apiError}
+                                {apiError}
                             </p>
                         )}
                         {redirectCountdown !== null && redirectCountdown > 0 && (
@@ -437,7 +437,7 @@ export function DinoPage() {
                 {gameState === 'success' && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/90">
                         <p className="text-gray-800 text-3xl font-medium mb-2">
-                            🎉 クリア！
+                            CLEAR!
                         </p>
                         <p className="text-gray-700 text-xl mb-2">
                             スコア: {score}
@@ -447,7 +447,7 @@ export function DinoPage() {
                         </p>
                         {isNewHighScore && (
                             <p className="text-gray-600 text-lg font-medium mb-2">
-                                🏆 NEW HIGH SCORE!
+                                NEW HIGH SCORE!
                             </p>
                         )}
                         {apiMessage && (

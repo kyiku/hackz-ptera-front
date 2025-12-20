@@ -184,7 +184,7 @@ export function CaptchaImage({
             {loadingState === 'error' && (
                 <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg">
                     <div className="flex flex-col items-center gap-3 text-red-500">
-                        <span className="text-4xl">⚠️</span>
+                        <span className="text-4xl">!</span>
                         <span className="text-sm">画像の読み込みに失敗しました</span>
                     </div>
                 </div>
@@ -230,7 +230,7 @@ export function CaptchaImage({
                 `}
                             >
                                 {selectedGridCells.has(i) && (
-                                    <span className="text-white text-2xl">✓</span>
+                                    <span className="text-white text-2xl">OK</span>
                                 )}
                             </button>
                         ))}

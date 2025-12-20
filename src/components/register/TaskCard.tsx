@@ -4,7 +4,7 @@
  *
  * 登録ダッシュボードで表示する各タスクのカード
  * - タスク名の表示
- * - 完了状態の表示（⚪︎ 完了 / ❌ 未完了）
+ * - 完了状態の表示（○ 完了 / × 未完了）
  * - クリックでタスクページへ遷移
  */
 import { useNavigate } from 'react-router-dom'
@@ -53,7 +53,7 @@ export const TaskCard = ({ task }: TaskCardProps) => {
 
     const displayName = TASK_DISPLAY_NAMES[task.id]
     const isCompleted = task.status === 'completed'
-    const statusIcon = isCompleted ? '⚪︎' : '❌'
+    const statusIcon = isCompleted ? '○' : '×'
 
     return (
         <button

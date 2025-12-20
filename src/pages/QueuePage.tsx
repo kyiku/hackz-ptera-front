@@ -82,7 +82,7 @@ export function QueuePage() {
           <div className="space-y-6" data-testid="countdown-section">
             <div className="text-center">
               <p className="text-green-600 text-2xl font-bold mb-4">
-                🎉 あなたの番です！
+                YOUR TURN!
               </p>
               <div className="bg-green-500 rounded-xl p-6 shadow-sm">
                 <p className="text-white text-sm mb-2">ゲーム開始まで</p>

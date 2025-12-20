@@ -75,7 +75,7 @@ export function ScoreDisplay({
                         {achieved ? 'CLEAR!' : 'TARGET'}
                     </span>
                     <div className={`text-3xl sm:text-4xl font-light font-mono mt-1 ${achieved ? 'text-gray-800' : 'text-gray-800'}`}>
-                        {achieved ? '✓' : formatScore(scoreRemaining)}
+                        {achieved ? 'CLEAR' : formatScore(scoreRemaining)}
                     </div>
                 </div>
             )}

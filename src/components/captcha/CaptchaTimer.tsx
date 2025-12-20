@@ -141,19 +141,19 @@ export function CaptchaTimer({
             {/* 警告メッセージ */}
             {isWarning && !isCritical && (
                 <p className="text-amber-600 text-xs mt-2 text-center">
-                    ⚠ 残り時間が少なくなっています
+                    残り時間が少なくなっています
                 </p>
             )}
             {isCritical && (
                 <p className="text-red-500 text-xs mt-2 text-center animate-pulse">
-                    ⚠ まもなくタイムアウトします！
+                    まもなくタイムアウトします！
                 </p>
             )}
 
             {/* タイムアウト表示 */}
             {isTimedOut && (
                 <div className="mt-2 text-center">
-                    <p className="text-red-500 font-bold">⏰ 時間切れ</p>
+                    <p className="text-red-500 font-bold">TIME OUT</p>
                 </div>
             )}
         </div>
