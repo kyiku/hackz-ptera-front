@@ -156,9 +156,12 @@ export function CaptchaImage({
 
     // 画像URLが変わったらリセット
     useEffect(() => {
-        setPositions([])
-        setSelectedGridCells(new Set())
-        setLoadingState('loading')
+        const timer = setTimeout(() => {
+            setPositions([])
+            setSelectedGridCells(new Set())
+            setLoadingState('loading')
+        }, 0)
+        return () => clearTimeout(timer)
     }, [imageUrl])
 
     return (
