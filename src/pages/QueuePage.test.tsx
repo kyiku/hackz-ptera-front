@@ -21,13 +21,13 @@ vi.mock('react-router-dom', async () => {
   }
 })
 
-// useQueueWebSocketMockのモック
-vi.mock('../hooks/useQueueWebSocketMock', () => ({
-  useQueueWebSocketMock: vi.fn(),
+// useQueueWebSocketのモック
+vi.mock('../hooks/useQueueWebSocket', () => ({
+  useQueueWebSocket: vi.fn(),
 }))
 
-import { useQueueWebSocketMock } from '../hooks/useQueueWebSocketMock'
-const mockedUseQueueWebSocketMock = vi.mocked(useQueueWebSocketMock)
+import { useQueueWebSocket } from '../hooks/useQueueWebSocket'
+const mockedUseQueueWebSocket = vi.mocked(useQueueWebSocket)
 
 describe('QueuePage', () => {
   beforeEach(() => {
@@ -40,7 +40,7 @@ describe('QueuePage', () => {
 
   describe('基本レンダリング', () => {
     it('待機列ページが正しくレンダリングされる', () => {
-      mockedUseQueueWebSocketMock.mockReturnValue({
+      mockedUseQueueWebSocket.mockReturnValue({
         isConnected: true,
         isConnecting: false,
         error: null,
@@ -59,7 +59,7 @@ describe('QueuePage', () => {
     })
 
     it('待機中メッセージが表示される', () => {
-      mockedUseQueueWebSocketMock.mockReturnValue({
+      mockedUseQueueWebSocket.mockReturnValue({
         isConnected: true,
         isConnecting: false,
         error: null,
@@ -78,7 +78,7 @@ describe('QueuePage', () => {
     })
 
     it('待機アニメーションが表示される', () => {
-      mockedUseQueueWebSocketMock.mockReturnValue({
+      mockedUseQueueWebSocket.mockReturnValue({
         isConnected: true,
         isConnecting: false,
         error: null,
@@ -101,7 +101,7 @@ describe('QueuePage', () => {
 
   describe('接続状態表示', () => {
     it('接続中の場合「接続中...」が表示される', () => {
-      mockedUseQueueWebSocketMock.mockReturnValue({
+      mockedUseQueueWebSocket.mockReturnValue({
         isConnected: false,
         isConnecting: true,
         error: null,
@@ -122,7 +122,7 @@ describe('QueuePage', () => {
 
   describe('待機状態表示', () => {
     it('待機人数が表示される', () => {
-      mockedUseQueueWebSocketMock.mockReturnValue({
+      mockedUseQueueWebSocket.mockReturnValue({
         isConnected: true,
         isConnecting: false,
         error: null,
@@ -142,7 +142,7 @@ describe('QueuePage', () => {
     })
 
     it('推定待機時間が表示される', () => {
-      mockedUseQueueWebSocketMock.mockReturnValue({
+      mockedUseQueueWebSocket.mockReturnValue({
         isConnected: true,
         isConnecting: false,
         error: null,
@@ -162,7 +162,7 @@ describe('QueuePage', () => {
     })
 
     it('現在の順位が表示される', () => {
-      mockedUseQueueWebSocketMock.mockReturnValue({
+      mockedUseQueueWebSocket.mockReturnValue({
         isConnected: true,
         isConnecting: false,
         error: null,
@@ -185,7 +185,7 @@ describe('QueuePage', () => {
   describe('ページ遷移', () => {
     it('順番が来たらDino Runページへ遷移する', async () => {
       // 初期状態で順位1、その後モックが遷移をトリガー
-      mockedUseQueueWebSocketMock.mockReturnValue({
+      mockedUseQueueWebSocket.mockReturnValue({
         isConnected: true,
         isConnecting: false,
         error: null,
@@ -207,7 +207,7 @@ describe('QueuePage', () => {
 
   describe('エラーハンドリング', () => {
     it('接続エラー時にエラーメッセージが表示される', () => {
-      mockedUseQueueWebSocketMock.mockReturnValue({
+      mockedUseQueueWebSocket.mockReturnValue({
         isConnected: false,
         isConnecting: false,
         error: '接続エラーが発生しました',
@@ -227,7 +227,7 @@ describe('QueuePage', () => {
 
     it('再接続ボタンが表示される', () => {
       const mockReconnect = vi.fn()
-      mockedUseQueueWebSocketMock.mockReturnValue({
+      mockedUseQueueWebSocket.mockReturnValue({
         isConnected: false,
         isConnecting: false,
         error: '接続エラーが発生しました',

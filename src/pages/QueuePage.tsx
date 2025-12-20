@@ -5,7 +5,7 @@
  * WebSocket接続状態と待機順位を表示するページ
  */
 import { QueuePosition } from '../components/queue/QueuePosition'
-import { useQueueWebSocketMock } from '../hooks/useQueueWebSocketMock'
+import { useQueueWebSocket } from '../hooks/useQueueWebSocket'
 
 export function QueuePage() {
   const {
@@ -15,7 +15,7 @@ export function QueuePage() {
     position,
     totalWaiting,
     reconnect,
-  } = useQueueWebSocketMock()
+  } = useQueueWebSocket()
 
   return (
     <div
