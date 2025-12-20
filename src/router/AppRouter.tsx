@@ -56,6 +56,7 @@ export const AppRoutes = () => {
 
             {/* テストページ */}
             <Route path="/test/email-morse" element={<EmailMorseTestPage />} />
+            <Route path="/test/phone" element={<RegisterPhonePage />} />
 
             {/* 保護されたルート（認証が必要） */}
             <Route
