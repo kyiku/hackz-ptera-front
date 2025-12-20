@@ -21,7 +21,7 @@ export const Layout = ({ children }: LayoutProps) => {
                     <div className="flex items-center gap-3">
                         {/* ロゴ */}
                         <div data-testid="logo" className="text-2xl">
-                            🦖
+                            ptera
                         </div>
                         {/* アプリタイトル */}
                         <h1 className="text-xl md:text-2xl font-bold">

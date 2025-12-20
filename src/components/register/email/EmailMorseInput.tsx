@@ -136,7 +136,7 @@ export const EmailMorseInput: React.FC<EmailMorseInputProps> = ({
                                     }`}
                                 disabled={!isActive}
                             >
-                                {isCalibrating ? '⏹️ 計測中止' : '🎯 感度調整'}
+                                {isCalibrating ? '計測中止' : '感度調整'}
                             </button>
                         )}
 
@@ -159,7 +159,7 @@ export const EmailMorseInput: React.FC<EmailMorseInputProps> = ({
                             disabled={!isActive}
                             title={!isActive ? 'カメラを起動してください' : ''}
                         >
-                            {useBlinkMode ? '👁️ 瞬き検出ON' : '🖱️ 手動入力'}
+                            {useBlinkMode ? '瞬き検出ON' : '手動入力'}
                         </button>
 
                         {!isActive ? (
@@ -173,7 +173,7 @@ export const EmailMorseInput: React.FC<EmailMorseInputProps> = ({
                                 className="px-3 py-1 bg-green-500 text-white text-sm rounded hover:bg-green-600"
                                 data-testid="camera-start-button"
                             >
-                                📷 カメラ起動
+                                カメラ起動
                             </button>
                         ) : (
                             <button
@@ -184,7 +184,7 @@ export const EmailMorseInput: React.FC<EmailMorseInputProps> = ({
                                 className="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600"
                                 data-testid="camera-stop-button"
                             >
-                                ⏹️ カメラ停止
+                                カメラ停止
                             </button>
                         )}
                     </div>
@@ -202,12 +202,12 @@ export const EmailMorseInput: React.FC<EmailMorseInputProps> = ({
                         <div className="absolute inset-0 flex items-center justify-center text-white bg-gray-800">
                             {cameraError ? (
                                 <div className="text-center p-4">
-                                    <div className="text-red-400 mb-2 text-4xl">⚠️</div>
+                                    <div className="text-red-400 mb-2 text-4xl">!</div>
                                     <div className="text-sm">{cameraError}</div>
                                 </div>
                             ) : (
                                 <div className="text-center">
-                                    <div className="mb-2 text-6xl">📷</div>
+                                    <div className="mb-2 text-6xl">[ ]</div>
                                     <div className="text-sm">カメラ起動ボタンを押してください</div>
                                 </div>
                             )}
@@ -251,7 +251,7 @@ export const EmailMorseInput: React.FC<EmailMorseInputProps> = ({
 
                 <p className="text-xs text-gray-500 mt-2">
                     {useBlinkMode
-                        ? '💡 短く瞬きで「・」、長く瞬きで「−」が入力されます。反応が悪い場合は「感度調整」を試してください。'
+                        ? '短く瞬きで「・」、長く瞬きで「−」が入力されます。反応が悪い場合は「感度調整」を試してください。'
                         : '※ 瞬き検出を有効にするには「瞬き検出ON」ボタンを押してください'}
                 </p>
             </div>
@@ -343,46 +343,48 @@ export const EmailMorseInput: React.FC<EmailMorseInputProps> = ({
             </div>
 
             {/* モールス信号ヘルプ */}
-            {showHelp && (
-                <div
-                    className="p-4 bg-gray-100 dark:bg-gray-800 rounded"
-                    data-testid="morse-help"
-                >
-                    <h3 className="font-bold mb-2">モールス信号対応表</h3>
-                    <div className="grid grid-cols-3 gap-2 text-sm">
-                        <div>a: ・−</div>
-                        <div>b: −・・・</div>
-                        <div>c: −・−・</div>
-                        <div>d: −・・</div>
-                        <div>e: ・</div>
-                        <div>f: ・・−・</div>
-                        <div>g: −−・</div>
-                        <div>h: ・・・・</div>
-                        <div>i: ・・</div>
-                        <div>j: ・−−−</div>
-                        <div>k: −・−</div>
-                        <div>l: ・−・・</div>
-                        <div>m: −−</div>
-                        <div>n: −・</div>
-                        <div>o: −−−</div>
-                        <div>p: ・−−・</div>
-                        <div>q: −−・−</div>
-                        <div>r: ・−・</div>
-                        <div>s: ・・・</div>
-                        <div>t: −</div>
-                        <div>u: ・・−</div>
-                        <div>v: ・・・−</div>
-                        <div>w: ・−−</div>
-                        <div>x: −・・−</div>
-                        <div>y: −・−−</div>
-                        <div>z: −−・・</div>
-                        <div>@: ・−−・−・</div>
-                        <div>.: ・−・−・−</div>
-                        <div>0-9: 標準</div>
+            {
+                showHelp && (
+                    <div
+                        className="p-4 bg-gray-100 dark:bg-gray-800 rounded"
+                        data-testid="morse-help"
+                    >
+                        <h3 className="font-bold mb-2">モールス信号対応表</h3>
+                        <div className="grid grid-cols-3 gap-2 text-sm">
+                            <div>a: ・−</div>
+                            <div>b: −・・・</div>
+                            <div>c: −・−・</div>
+                            <div>d: −・・</div>
+                            <div>e: ・</div>
+                            <div>f: ・・−・</div>
+                            <div>g: −−・</div>
+                            <div>h: ・・・・</div>
+                            <div>i: ・・</div>
+                            <div>j: ・−−−</div>
+                            <div>k: −・−</div>
+                            <div>l: ・−・・</div>
+                            <div>m: −−</div>
+                            <div>n: −・</div>
+                            <div>o: −−−</div>
+                            <div>p: ・−−・</div>
+                            <div>q: −−・−</div>
+                            <div>r: ・−・</div>
+                            <div>s: ・・・</div>
+                            <div>t: −</div>
+                            <div>u: ・・−</div>
+                            <div>v: ・・・−</div>
+                            <div>w: ・−−</div>
+                            <div>x: −・・−</div>
+                            <div>y: −・−−</div>
+                            <div>z: −−・・</div>
+                            <div>@: ・−−・−・</div>
+                            <div>.: ・−・−・−</div>
+                            <div>0-9: 標準</div>
+                        </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     )
 }
 

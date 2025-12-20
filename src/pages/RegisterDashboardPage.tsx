@@ -62,7 +62,7 @@ export const RegisterDashboardPage = () => {
     return (
         <div
             data-testid="register-dashboard-page"
-            className="min-h-screen bg-gray-900 text-white py-8 px-4"
+            className="min-h-screen bg-white text-gray-800 py-8 px-4"
         >
             <div className="max-w-4xl mx-auto">
                 <h1 className="text-3xl font-bold text-center mb-8">登録ダッシュボード</h1>
@@ -81,17 +81,16 @@ export const RegisterDashboardPage = () => {
                         data-testid="register-submit-button"
                         onClick={handleSubmit}
                         disabled={!isAllCompleted}
-                        className={`px-8 py-3 rounded-lg font-bold text-lg transition-colors ${
-                            isAllCompleted
-                                ? 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer'
-                                : 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                        } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                        className={`px-8 py-3 rounded-lg font-bold text-lg transition-colors ${isAllCompleted
+                                ? 'bg-blue-500 hover:bg-blue-600 text-white cursor-pointer'
+                                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                            } focus:outline-none focus:ring-2 focus:ring-blue-500`}
                         type="button"
                     >
                         登録する
                     </button>
                     {!isAllCompleted && (
-                        <p className="mt-2 text-sm text-gray-400">※全タスク完了で有効化</p>
+                        <p className="mt-2 text-sm text-gray-500">※全タスク完了で有効化</p>
                     )}
                 </div>
             </div>
@@ -100,4 +99,3 @@ export const RegisterDashboardPage = () => {
 }
 
 export default RegisterDashboardPage
-

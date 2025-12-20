@@ -67,37 +67,35 @@ export function RegisterPhonePage() {
         }
     }, [phoneDigits, completeTask, navigate])
 
+    // 戻る
+    const handleBack = useCallback(() => {
+        navigate('/register')
+    }, [navigate])
+
     return (
         <div
             data-testid="register-phone-page"
-            className="min-h-screen bg-gradient-to-br from-amber-950 via-stone-900 to-gray-900 flex flex-col items-center justify-center p-4"
+            className="min-h-screen bg-white flex flex-col items-center justify-center p-4"
         >
             {/* ヘッダー */}
             <div className="text-center mb-8">
-                <h1 className="text-3xl font-bold text-amber-100 mb-2">
-                    📞 電話番号を入力
+                <h1 className="text-3xl font-light text-gray-800 mb-2">
+                    電話番号入力
                 </h1>
-                <p className="text-amber-200/70 text-sm">
-                    懐かしの黒電話で番号をダイヤルしてください
+                <p className="text-gray-500 text-sm">
+                    ダイヤルを回して番号を入力してください
                 </p>
             </div>
 
             {/* 電話番号表示エリア */}
-            <div className="bg-gray-900/80 backdrop-blur-sm rounded-xl border border-amber-800/50 p-6 mb-8 min-w-80">
-                <p className="text-amber-200/60 text-xs mb-2 text-center">入力中の電話番号</p>
+            <div className="bg-gray-100 border border-gray-300 rounded-lg p-6 mb-8 min-w-80">
+                <p className="text-gray-500 text-xs mb-2 text-center">入力中の電話番号</p>
                 <div className="text-center">
-                    <span
-                        className="font-mono text-4xl font-bold tracking-wider"
-                        style={{
-                            background: 'linear-gradient(180deg, #fef3c7 0%, #fbbf24 100%)',
-                            WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent',
-                        }}
-                    >
+                    <span className="font-mono text-4xl font-bold tracking-wider text-gray-800">
                         {formatWithMask(phoneDigits)}
                     </span>
                 </div>
-                <p className="text-amber-200/40 text-xs mt-2 text-center">
+                <p className="text-gray-400 text-xs mt-2 text-center">
                     {phoneDigits.length} / 11 桁入力済み
                 </p>
             </div>
@@ -113,45 +111,54 @@ export function RegisterPhonePage() {
                 <button
                     onClick={handleBackspace}
                     disabled={phoneDigits.length === 0}
-                    className={`px-6 py-3 rounded-lg font-bold transition-all ${phoneDigits.length === 0
-                        ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
-                        : 'bg-gray-700 hover:bg-gray-600 text-white'
-                        }`}
+                    className={`px-6 py-3 rounded-lg font-medium transition-all ${
+                        phoneDigits.length === 0
+                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                            : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                    }`}
                 >
                     ← 1桁削除
                 </button>
                 <button
                     onClick={handleClear}
                     disabled={phoneDigits.length === 0}
-                    className={`px-6 py-3 rounded-lg font-bold transition-all ${phoneDigits.length === 0
-                        ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
-                        : 'bg-red-800 hover:bg-red-700 text-white'
-                        }`}
+                    className={`px-6 py-3 rounded-lg font-medium transition-all ${
+                        phoneDigits.length === 0
+                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                            : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                    }`}
                 >
                     全削除
                 </button>
                 <button
                     onClick={handleComplete}
                     disabled={!isComplete}
-                    className={`px-8 py-3 rounded-lg font-bold transition-all ${isComplete
-                        ? 'bg-green-600 hover:bg-green-500 text-white shadow-lg shadow-green-600/30'
-                        : 'bg-gray-700 text-gray-500 cursor-not-allowed'
-                        }`}
+                    className={`px-8 py-3 rounded-lg font-medium transition-all ${
+                        isComplete
+                            ? 'bg-gray-800 hover:bg-gray-700 text-white'
+                            : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    }`}
                 >
-                    完了 ✓
+                    完了
                 </button>
             </div>
 
             {/* 完了メッセージ */}
             {isComplete && (
-                <div className="mt-6 text-green-400 text-lg animate-pulse">
-                    🎉 11桁入力完了！「完了」ボタンを押してください
+                <div className="mt-6 text-green-600 text-lg">
+                    11桁入力完了！「完了」ボタンを押してください
                 </div>
             )}
 
-            {/* レトロ装飾 */}
-            <div className="mt-8 text-amber-200/30 text-xs text-center">
-                ※ 正しい黒電話の使い方: 数字の穴に指を入れ、ストッパーまで回し、指を離す
+            {/* 戻るボタン */}
+            <div className="mt-8">
+                <button
+                    data-testid="back-to-dashboard-button"
+                    onClick={handleBack}
+                    className="px-6 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+                >
+                    ダッシュボードに戻る
+                </button>
             </div>
         </div>
     )
