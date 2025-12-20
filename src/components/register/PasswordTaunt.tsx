@@ -137,31 +137,40 @@ export const PasswordTaunt = ({
         // デバウンスタイマーを設定
         setIsLoading(true)
         debounceTimerRef.current = window.setTimeout(async () => {
+            const getDefaultMessage = () =>
+                DEFAULT_TAUNT_MESSAGES[Math.floor(Math.random() * DEFAULT_TAUNT_MESSAGES.length)]
+
             try {
-                let response
+                let resultMessage = ''
 
                 if (useMock) {
                     // モックAPIを使用
-                    response = await analyzePasswordMock({ password })
+                    const response = await analyzePasswordMock({ password })
+                    resultMessage = response?.message || ''
                 } else {
                     // 本番APIを試す、失敗したらモックにフォールバック
                     try {
-                        response = await analyzePassword({ password })
-                    } catch {
-                        console.log('Bedrock API failed, falling back to mock')
-                        response = await analyzePasswordMock({ password })
+                        const response = await analyzePassword({ password })
+                        resultMessage = response?.message || ''
+                    } catch (err) {
+                        console.log('Bedrock API failed, falling back to mock:', err)
+                        try {
+                            const mockResponse = await analyzePasswordMock({ password })
+                            resultMessage = mockResponse?.message || ''
+                        } catch (mockErr) {
+                            console.log('Mock API also failed:', mockErr)
+                        }
                     }
                 }
 
-                setMessage(response.message)
-                // 解析結果を読み上げ
-                speakMessage(response.message)
-            } catch {
+                // メッセージが空の場合はデフォルトメッセージを使用
+                const finalMessage = resultMessage || getDefaultMessage()
+                setMessage(finalMessage)
+                speakMessage(finalMessage)
+            } catch (err) {
                 // エラー時はデフォルトメッセージを表示
-                const randomMessage =
-                    DEFAULT_TAUNT_MESSAGES[
-                        Math.floor(Math.random() * DEFAULT_TAUNT_MESSAGES.length)
-                    ]
+                console.log('Password analysis error:', err)
+                const randomMessage = getDefaultMessage()
                 setMessage(randomMessage)
                 speakMessage(randomMessage)
             } finally {
