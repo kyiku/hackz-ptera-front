@@ -5,11 +5,11 @@
  * パスワード入力時にAIが煽りメッセージを表示＆読み上げ
  * - パスワード入力のデバウンス（1000ms）
  * - POST /api/password/analyze API呼び出し（Bedrock）
- * - 煽りメッセージ表示UI
+ * - フォールバック: モックAPI
  * - Web Speech APIで読み上げ
  */
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { analyzePassword } from '../../api/passwordApi'
+import { analyzePassword, analyzePasswordMock } from '../../api/passwordApi'
 import { LoadingSpinner } from '../ui/LoadingSpinner'
 
 interface PasswordTauntProps {
@@ -21,6 +21,8 @@ interface PasswordTauntProps {
     className?: string
     /** 読み上げを有効にするか */
     enableSpeech?: boolean
+    /** モックAPIを使用するか（開発用） */
+    useMock?: boolean
 }
 
 /**
@@ -35,8 +37,9 @@ const DEFAULT_TAUNT_MESSAGES = [
 /**
  * Web Speech APIで読み上げ
  */
-const speak = (text: string) => {
+const speakText = (text: string, onEnd?: () => void) => {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+        onEnd?.()
         return
     }
 
@@ -45,18 +48,45 @@ const speak = (text: string) => {
 
     const utterance = new SpeechSynthesisUtterance(text)
     utterance.lang = 'ja-JP'
-    utterance.rate = 1.0
+    utterance.rate = 1.1  // 少し速め
     utterance.pitch = 1.0
     utterance.volume = 1.0
 
-    // 日本語の音声を探す
-    const voices = speechSynthesis.getVoices()
-    const japaneseVoice = voices.find(voice => voice.lang.startsWith('ja'))
-    if (japaneseVoice) {
-        utterance.voice = japaneseVoice
+    utterance.onend = () => {
+        onEnd?.()
     }
 
-    speechSynthesis.speak(utterance)
+    utterance.onerror = () => {
+        onEnd?.()
+    }
+
+    // 音声リストを取得（非同期で読み込まれることがある）
+    const setVoiceAndSpeak = () => {
+        const voices = speechSynthesis.getVoices()
+        const japaneseVoice = voices.find(voice =>
+            voice.lang.startsWith('ja') || voice.lang === 'ja-JP'
+        )
+        if (japaneseVoice) {
+            utterance.voice = japaneseVoice
+        }
+        speechSynthesis.speak(utterance)
+    }
+
+    // 音声リストがすでに読み込まれている場合
+    if (speechSynthesis.getVoices().length > 0) {
+        setVoiceAndSpeak()
+    } else {
+        // 音声リストの読み込みを待つ
+        speechSynthesis.onvoiceschanged = () => {
+            setVoiceAndSpeak()
+        }
+        // フォールバック: 1秒後に実行
+        setTimeout(() => {
+            if (!speechSynthesis.speaking) {
+                setVoiceAndSpeak()
+            }
+        }, 1000)
+    }
 }
 
 export const PasswordTaunt = ({
@@ -64,6 +94,7 @@ export const PasswordTaunt = ({
     debounceMs = 1000,
     className = '',
     enableSpeech = true,
+    useMock = false,
 }: PasswordTauntProps) => {
     const [message, setMessage] = useState<string>('')
     const [isLoading, setIsLoading] = useState(false)
@@ -73,23 +104,21 @@ export const PasswordTaunt = ({
 
     // 読み上げ実行
     const speakMessage = useCallback((text: string) => {
-        if (!enableSpeech || !text || text === lastSpokenRef.current) {
+        if (!enableSpeech || !text) {
+            return
+        }
+
+        // 同じメッセージは読み上げない
+        if (text === lastSpokenRef.current) {
             return
         }
 
         lastSpokenRef.current = text
         setIsSpeaking(true)
-        speak(text)
 
-        // 読み上げ終了を検出
-        if ('speechSynthesis' in window) {
-            const checkSpeaking = setInterval(() => {
-                if (!speechSynthesis.speaking) {
-                    setIsSpeaking(false)
-                    clearInterval(checkSpeaking)
-                }
-            }, 100)
-        }
+        speakText(text, () => {
+            setIsSpeaking(false)
+        })
     }, [enableSpeech])
 
     useEffect(() => {
@@ -109,7 +138,21 @@ export const PasswordTaunt = ({
         setIsLoading(true)
         debounceTimerRef.current = window.setTimeout(async () => {
             try {
-                const response = await analyzePassword({ password })
+                let response
+
+                if (useMock) {
+                    // モックAPIを使用
+                    response = await analyzePasswordMock({ password })
+                } else {
+                    // 本番APIを試す、失敗したらモックにフォールバック
+                    try {
+                        response = await analyzePassword({ password })
+                    } catch {
+                        console.log('Bedrock API failed, falling back to mock')
+                        response = await analyzePasswordMock({ password })
+                    }
+                }
+
                 setMessage(response.message)
                 // 解析結果を読み上げ
                 speakMessage(response.message)
@@ -132,7 +175,7 @@ export const PasswordTaunt = ({
                 clearTimeout(debounceTimerRef.current)
             }
         }
-    }, [password, debounceMs, speakMessage])
+    }, [password, debounceMs, speakMessage, useMock])
 
     // コンポーネントアンマウント時に読み上げ停止
     useEffect(() => {
@@ -178,6 +221,20 @@ export const PasswordTaunt = ({
                             </p>
                         )}
                     </div>
+                    {/* 再読み上げボタン */}
+                    {!isSpeaking && message && enableSpeech && (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                lastSpokenRef.current = ''
+                                speakMessage(message)
+                            }}
+                            className="text-red-500 hover:text-red-700 p-2"
+                            title="もう一度読み上げる"
+                        >
+                            🔊
+                        </button>
+                    )}
                 </div>
             )}
         </div>
