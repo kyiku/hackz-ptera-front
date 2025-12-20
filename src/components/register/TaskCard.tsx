@@ -25,7 +25,7 @@ const TASK_ROUTES: Record<TaskId, string> = {
     email: '/register/email',
     terms: '/register/terms',
     password: '/register/password',
-    captcha: '/captcha',
+    captcha: '/register/captcha',
     otp: '/otp',
 }
 

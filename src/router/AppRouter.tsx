@@ -15,6 +15,7 @@ import RegisterAddressPage from '../pages/RegisterAddressPage'
 import RegisterEmailPage from '../pages/RegisterEmailPage'
 import RegisterTermsPage from '../pages/RegisterTermsPage'
 import RegisterPasswordPage from '../pages/RegisterPasswordPage'
+import RegisterCaptchaPage from '../pages/RegisterCaptchaPage'
 import OtpPage from '../pages/OtpPage'
 import CompletePage from '../pages/CompletePage'
 import NotFoundPage from '../pages/NotFoundPage'
@@ -128,6 +129,14 @@ export const AppRoutes = () => {
                 element={
                     <ProtectedRoute>
                         <RegisterPasswordPage />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/register/captcha"
+                element={
+                    <ProtectedRoute>
+                        <RegisterCaptchaPage />
                     </ProtectedRoute>
                 }
             />
