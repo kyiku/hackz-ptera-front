@@ -34,24 +34,42 @@ export const CalcOtpDisplay = ({
     const mathRef = useRef<HTMLDivElement>(null)
     const inputRef = useRef<HTMLInputElement>(null)
 
-    // KaTeXでLaTeXをレンダリング
+    // 問題文をパースして表示用に変換
+    const parsedProblem = (() => {
+        if (!problemLatex) return { formula: '', instruction: '' }
+
+        // "f(x) = ... を微分し、x = k での値を求めよ" の形式をパース
+        const match = problemLatex.match(/^(f\(x\)\s*=\s*.+?)\s*(を微分し、.+)$/)
+        if (match) {
+            return {
+                formula: match[1],
+                instruction: match[2],
+            }
+        }
+        return { formula: problemLatex, instruction: '' }
+    })()
+
+    // KaTeXで数式部分をレンダリング
     useEffect(() => {
-        if (mathRef.current && problemLatex) {
+        if (mathRef.current && parsedProblem.formula) {
             try {
-                // 問題文からLaTeX部分を抽出してレンダリング
-                const latex = problemLatex
-                katex.render(latex, mathRef.current, {
+                // f(x) = ax^2 + bx + c を LaTeX形式に変換
+                const latexFormula = parsedProblem.formula
+                    .replace(/\^(\d+)/g, '^{$1}')  // x^2 → x^{2}
+                    .replace(/(\d)x/g, '$1 \\cdot x')  // 3x → 3 \cdot x (optional)
+
+                katex.render(latexFormula, mathRef.current, {
                     throwOnError: false,
                     displayMode: true,
                 })
             } catch (error) {
                 console.error('KaTeX rendering error:', error)
                 if (mathRef.current) {
-                    mathRef.current.textContent = problemLatex
+                    mathRef.current.textContent = parsedProblem.formula
                 }
             }
         }
-    }, [problemLatex])
+    }, [parsedProblem.formula])
 
     // 問題が変わったら入力をクリア
     useEffect(() => {
@@ -86,6 +104,11 @@ export const CalcOtpDisplay = ({
                     className="text-xl text-center text-gray-800 min-h-[60px] flex items-center justify-center"
                     data-testid="problem-display"
                 />
+                {parsedProblem.instruction && (
+                    <p className="text-lg text-center text-gray-700 mt-4">
+                        {parsedProblem.instruction}
+                    </p>
+                )}
             </div>
 
             {/* 回答入力フォーム */}
