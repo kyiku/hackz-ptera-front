@@ -28,6 +28,7 @@ export function DinoPage() {
     const animationFrameRef = useRef<number>(0)
     const scoreRef = useRef<number>(0)
     const timerRef = useRef<number>(0)
+    const gameLoopRef = useRef<(() => void) | null>(null)
 
     const [gameState, setGameState] = useState<GameState>('ready')
     const [score, setScore] = useState(0)
@@ -183,8 +184,13 @@ export function DinoPage() {
         }
 
         // ゲームループ継続
-        animationFrameRef.current = requestAnimationFrame(gameLoop)
+        animationFrameRef.current = requestAnimationFrame(() => gameLoopRef.current?.())
     }, [handleGameOver, handleSuccess])
+
+    // gameLoopRefを最新に保つ
+    useEffect(() => {
+        gameLoopRef.current = gameLoop
+    }, [gameLoop])
 
     // ゲーム開始
     const startGame = useCallback(() => {

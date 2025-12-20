@@ -18,24 +18,23 @@ export function QueuePosition({ position, totalWaiting }: QueuePositionProps) {
 
     // 順位変化時のアニメーション
     useEffect(() => {
-        if (prevPositionRef.current !== position) {
-            if (position < prevPositionRef.current) {
-                // 順位が上がった（数字が減った）= ハイライト
-                setAnimationClass('animate-pulse text-green-400')
-            } else {
-                // 順位が下がった（数字が増えた）= 警告
-                setAnimationClass('animate-bounce text-red-400')
-            }
-
-            prevPositionRef.current = position
-
-            // アニメーションをリセット
-            const timer = setTimeout(() => {
-                setAnimationClass('')
-            }, 1000)
-
-            return () => clearTimeout(timer)
+        if (prevPositionRef.current === position) {
+            return
         }
+
+        const newClass = position < prevPositionRef.current
+            ? 'animate-pulse text-green-400'
+            : 'animate-bounce text-red-400'
+
+        prevPositionRef.current = position
+        setAnimationClass(newClass)
+
+        // アニメーションをリセット
+        const timer = setTimeout(() => {
+            setAnimationClass('')
+        }, 1000)
+
+        return () => clearTimeout(timer)
     }, [position])
 
     // プログレス計算（0〜100%）

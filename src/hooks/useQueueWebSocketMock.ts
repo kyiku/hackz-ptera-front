@@ -72,9 +72,12 @@ export function useQueueWebSocketMock(): UseQueueWebSocketReturn {
 
     // 初回接続
     useEffect(() => {
-        connect()
+        const timer = setTimeout(() => {
+            connect()
+        }, 0)
 
         return () => {
+            clearTimeout(timer)
             if (intervalRef.current) {
                 clearInterval(intervalRef.current)
             }

@@ -43,6 +43,7 @@ export function useQueueWebSocket(): UseQueueWebSocketReturn {
     const wsRef = useRef<WebSocket | null>(null)
     const reconnectTimeoutRef = useRef<number | null>(null)
     const pingIntervalRef = useRef<number | null>(null)
+    const connectRef = useRef<(() => void) | null>(null)
 
     const [isConnected, setIsConnected] = useState(false)
     const [isConnecting, setIsConnecting] = useState(true)
@@ -129,7 +130,7 @@ export function useQueueWebSocket(): UseQueueWebSocketReturn {
 
                 // 自動再接続（5秒後）
                 reconnectTimeoutRef.current = window.setTimeout(() => {
-                    connect()
+                    connectRef.current?.()
                 }, 5000)
             }
         } catch {
@@ -137,6 +138,11 @@ export function useQueueWebSocket(): UseQueueWebSocketReturn {
             setIsConnecting(false)
         }
     }, [navigate])
+
+    // connectRefを最新に保つ
+    useEffect(() => {
+        connectRef.current = connect
+    }, [connect])
 
     // 手動再接続
     const reconnect = useCallback(() => {
