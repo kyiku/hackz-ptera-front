@@ -4,27 +4,34 @@
  * 
  * 機能:
  * - モールス信号でメールアドレスを入力
- * - キーボード入力版（カメラ版は今後実装）
+ * - カメラプレビュー機能
  * - モールス信号ヘルプ表示
  */
 
 import React, { useState } from 'react'
 import { MorseDecoder } from './MorseDecoder'
+import { useCamera } from '../../../hooks/useCamera'
 
 export interface EmailMorseInputProps {
     /** 入力完了時のコールバック */
     onSubmit?: (email: string) => void
     /** 初期値 */
     defaultValue?: string
+    /** カメラ機能を有効にするか */
+    enableCamera?: boolean
 }
 
 export const EmailMorseInput: React.FC<EmailMorseInputProps> = ({
     onSubmit,
     defaultValue = '',
+    enableCamera = false,
 }) => {
     const [currentMorse, setCurrentMorse] = useState('')
     const [email, setEmail] = useState(defaultValue)
     const [showHelp, setShowHelp] = useState(false)
+
+    // カメラ機能
+    const { videoRef, isActive, error: cameraError, start, stop } = useCamera()
 
     const handleDot = () => {
         setCurrentMorse((prev) => prev + '.')
@@ -69,6 +76,63 @@ export const EmailMorseInput: React.FC<EmailMorseInputProps> = ({
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                 モールス信号でメールアドレスを入力してください
             </p>
+
+            {/* カメラプレビュー */}
+            {enableCamera && (
+                <div className="mb-4">
+                    <div className="flex justify-between items-center mb-2">
+                        <div className="text-sm font-semibold">カメラプレビュー</div>
+                        <div className="flex gap-2">
+                            {!isActive ? (
+                                <button
+                                    onClick={start}
+                                    className="px-3 py-1 bg-green-500 text-white text-sm rounded hover:bg-green-600"
+                                    data-testid="camera-start-button"
+                                >
+                                    📷 カメラ起動
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={stop}
+                                    className="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600"
+                                    data-testid="camera-stop-button"
+                                >
+                                    ⏹️ カメラ停止
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="relative bg-black rounded overflow-hidden" style={{ aspectRatio: '4/3' }}>
+                        <video
+                            ref={videoRef}
+                            className="w-full h-full object-cover"
+                            data-testid="camera-video"
+                            playsInline
+                            muted
+                        />
+                        {!isActive && (
+                            <div className="absolute inset-0 flex items-center justify-center text-white bg-gray-800">
+                                {cameraError ? (
+                                    <div className="text-center p-4">
+                                        <div className="text-red-400 mb-2 text-4xl">⚠️</div>
+                                        <div className="text-sm">{cameraError}</div>
+                                    </div>
+                                ) : (
+                                    <div className="text-center">
+                                        <div className="mb-2 text-6xl">📷</div>
+                                        <div className="text-sm">カメラ起動ボタンを押してください</div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
+                    <p className="text-xs text-gray-500 mt-2">
+                        ※ 瞬き検出機能は開発中です。現在はキーボード入力をご利用ください。
+                    </p>
+                </div>
+            )}
 
             {/* 入力中のモールス信号 */}
             <div className="mb-4 p-4 bg-gray-100 dark:bg-gray-800 rounded">
