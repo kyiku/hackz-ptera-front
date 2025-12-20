@@ -8,14 +8,21 @@ import { useNavigate } from 'react-router-dom'
 
 // WebSocketメッセージの型定義
 interface QueueUpdateMessage {
-    type: 'queue_update'
+    type: 'queueUpdate'
     position: number
-    totalWaiting: number
+    total: number
 }
 
 interface StageChangeMessage {
     type: 'stage_change'
     status: string
+    message?: string
+}
+
+interface ConnectedMessage {
+    type: 'connected'
+    message: string
+    user_id: string
 }
 
 interface ErrorMessage {
@@ -23,7 +30,7 @@ interface ErrorMessage {
     message: string
 }
 
-type WebSocketMessage = QueueUpdateMessage | StageChangeMessage | ErrorMessage
+type WebSocketMessage = QueueUpdateMessage | StageChangeMessage | ConnectedMessage | ErrorMessage
 
 // フックの戻り値の型
 interface UseQueueWebSocketReturn {
@@ -89,10 +96,15 @@ export function useQueueWebSocket(): UseQueueWebSocketReturn {
                     const message: WebSocketMessage = JSON.parse(event.data)
 
                     switch (message.type) {
-                        case 'queue_update':
+                        case 'connected':
+                            // 接続成功メッセージ
+                            console.log('WebSocket connected:', message.message)
+                            break
+
+                        case 'queueUpdate':
                             // 順位表示を更新
                             setPosition(message.position)
-                            setTotalWaiting(message.totalWaiting)
+                            setTotalWaiting(message.total)
                             break
 
                         case 'stage_change':
