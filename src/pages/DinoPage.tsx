@@ -13,7 +13,7 @@ import { ObstacleManager } from '../components/dino/Obstacle'
 import { checkCollision } from '../components/dino/CollisionDetector'
 import { ScoreDisplay } from '../components/dino/ScoreDisplay'
 import { TARGET_SCORE, isTimeout, isTargetAchieved } from '../components/dino/scoreUtils'
-import { submitGameResult } from '../api/dinoApi'
+import { submitGameResult, startGame as startGameApi } from '../api/dinoApi'
 import type { GameResultResponse } from '../api/dinoApi'
 import { useSessionStore } from '../store/sessionStore'
 
@@ -51,6 +51,24 @@ export function DinoPage() {
         dinoRef.current = new Dinosaur(80)
         obstacleManagerRef.current = new ObstacleManager(CANVAS_WIDTH)
     }, [])
+
+    // ゲーム開始時にバックエンドに通知（ユーザーステータスをstage1_dinoに昇格）
+    useEffect(() => {
+        const initGame = async () => {
+            try {
+                const response = await startGameApi()
+                if (response.error) {
+                    console.warn('Game start warning:', response.message)
+                } else {
+                    console.log('Game initialized:', response.message)
+                    setStatus('stage1_dino')
+                }
+            } catch (error) {
+                console.error('Failed to initialize game:', error)
+            }
+        }
+        initGame()
+    }, [setStatus])
 
     // API結果送信
     const submitResult = useCallback(async (cleared: boolean) => {

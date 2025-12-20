@@ -1,11 +1,19 @@
 /**
  * Dino Game API
- * 
- * ゲーム結果の送信とレスポンス処理
+ *
+ * ゲーム開始・結果の送信とレスポンス処理
  */
 
 // API Base URL
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080'
+
+// ゲーム開始レスポンス型
+export interface GameStartResponse {
+    error: boolean
+    message: string
+    status?: string
+    code?: string
+}
 
 // リクエスト型
 export interface GameResultRequest {
@@ -44,6 +52,46 @@ export class DinoApiError extends Error {
         this.name = 'DinoApiError'
         this.statusCode = statusCode
         this.response = response
+    }
+}
+
+/**
+ * ゲーム開始をAPIに通知（ユーザーステータスをstage1_dinoに昇格）
+ *
+ * @returns APIレスポンス
+ */
+export async function startGame(): Promise<GameStartResponse> {
+    const url = `${API_BASE_URL}/api/game/dino/start`
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify({}),
+        })
+
+        const contentType = response.headers.get('content-type')
+        if (!contentType || !contentType.includes('application/json')) {
+            const text = await response.text()
+            console.error('Unexpected response:', text.substring(0, 200))
+            throw new DinoApiError(
+                `Expected JSON but received ${contentType}`,
+                response.status
+            )
+        }
+
+        const data: GameStartResponse = await response.json()
+        return data
+    } catch (error) {
+        if (error instanceof DinoApiError) {
+            throw error
+        }
+        throw new DinoApiError(
+            error instanceof Error ? error.message : 'Unknown error occurred'
+        )
     }
 }
 
