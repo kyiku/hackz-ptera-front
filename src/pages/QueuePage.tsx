@@ -15,6 +15,8 @@ export function QueuePage() {
     position,
     totalWaiting,
     reconnect,
+    countdownSeconds,
+    isMyTurn,
   } = useQueueWebSocket()
 
   return (
@@ -42,7 +44,7 @@ export function QueuePage() {
         )}
 
         {/* 待機順位表示エリア - WebSocket経由で更新 */}
-        {isConnected && (
+        {isConnected && !isMyTurn && (
           <div className="space-y-6">
             <QueuePosition
               position={position}
@@ -72,6 +74,33 @@ export function QueuePage() {
                 />
               ))}
             </div>
+          </div>
+        )}
+
+        {/* 自分の番が来た時のカウントダウン表示 */}
+        {isConnected && isMyTurn && (
+          <div className="space-y-6" data-testid="countdown-section">
+            <div className="text-center">
+              <p className="text-green-400 text-2xl font-bold mb-4">
+                🎉 あなたの番です！
+              </p>
+              <div className="bg-gradient-to-r from-green-600 to-emerald-600 rounded-xl p-6 shadow-lg">
+                <p className="text-white text-sm mb-2">ゲーム開始まで</p>
+                <p className="text-white text-6xl font-bold" data-testid="countdown-number">
+                  {countdownSeconds}
+                </p>
+                <p className="text-white text-sm mt-2">秒</p>
+              </div>
+            </div>
+
+            {/* パルスアニメーション */}
+            <div className="flex justify-center">
+              <div className="w-4 h-4 bg-green-500 rounded-full animate-ping" />
+            </div>
+
+            <p className="text-gray-300 text-sm">
+              Dino Run ゲームに移動します...
+            </p>
           </div>
         )}
 

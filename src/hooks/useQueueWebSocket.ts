@@ -40,10 +40,17 @@ interface UseQueueWebSocketReturn {
     position: number
     totalWaiting: number
     reconnect: () => void
+    /** 遷移までのカウントダウン秒数（null=カウントダウン中でない） */
+    countdownSeconds: number | null
+    /** 自分の番かどうか */
+    isMyTurn: boolean
 }
 
 // WebSocket URL（環境変数から取得、なければモック用のデフォルト）
 const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8080/ws'
+
+// 自分の番になってから遷移するまでの秒数
+const COUNTDOWN_SECONDS = 5
 
 export function useQueueWebSocket(): UseQueueWebSocketReturn {
     const navigate = useNavigate()
@@ -51,12 +58,15 @@ export function useQueueWebSocket(): UseQueueWebSocketReturn {
     const reconnectTimeoutRef = useRef<number | null>(null)
     const pingIntervalRef = useRef<number | null>(null)
     const connectRef = useRef<(() => void) | null>(null)
+    const countdownIntervalRef = useRef<number | null>(null)
 
     const [isConnected, setIsConnected] = useState(false)
     const [isConnecting, setIsConnecting] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [position, setPosition] = useState(0)
     const [totalWaiting, setTotalWaiting] = useState(0)
+    const [countdownSeconds, setCountdownSeconds] = useState<number | null>(null)
+    const countdownStartedRef = useRef(false)
 
     // WebSocket接続を確立
     const connect = useCallback(() => {
@@ -187,6 +197,56 @@ export function useQueueWebSocket(): UseQueueWebSocketReturn {
         }
     }, [connect])
 
+    // 自分の番かどうか（派生状態）
+    const isMyTurn = position === 1 && isConnected
+
+    // position=1になったらカウントダウン開始、0秒で遷移
+    useEffect(() => {
+        if (isMyTurn) {
+            // すでにカウントダウン中なら何もしない
+            if (countdownStartedRef.current) {
+                return
+            }
+            countdownStartedRef.current = true
+
+            // カウントダウン開始（初期値をセット）
+            let remaining = COUNTDOWN_SECONDS
+            // isMyTurnの変化に応じて初期化する必要があるため、ここでのsetStateは必要
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setCountdownSeconds(remaining)
+
+            countdownIntervalRef.current = window.setInterval(() => {
+                remaining -= 1
+                if (remaining <= 0) {
+                    // カウントダウン終了、遷移
+                    if (countdownIntervalRef.current) {
+                        clearInterval(countdownIntervalRef.current)
+                        countdownIntervalRef.current = null
+                    }
+                    setCountdownSeconds(0)
+                    navigate('/game/dino')
+                } else {
+                    setCountdownSeconds(remaining)
+                }
+            }, 1000)
+        } else {
+            // position が 1 以外ならカウントダウンをリセット
+            countdownStartedRef.current = false
+            if (countdownIntervalRef.current) {
+                clearInterval(countdownIntervalRef.current)
+                countdownIntervalRef.current = null
+            }
+            setCountdownSeconds(null)
+        }
+
+        return () => {
+            if (countdownIntervalRef.current) {
+                clearInterval(countdownIntervalRef.current)
+                countdownIntervalRef.current = null
+            }
+        }
+    }, [isMyTurn, navigate])
+
     return {
         isConnected,
         isConnecting,
@@ -194,5 +254,7 @@ export function useQueueWebSocket(): UseQueueWebSocketReturn {
         position,
         totalWaiting,
         reconnect,
+        countdownSeconds,
+        isMyTurn,
     }
 }
