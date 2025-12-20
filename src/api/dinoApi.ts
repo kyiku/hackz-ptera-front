@@ -68,12 +68,8 @@ export async function submitGameResult(
             body: JSON.stringify(request),
         })
 
-        if (!response.ok) {
-            throw new DinoApiError(
-                `API request failed with status ${response.status}`,
-                response.status
-            )
-        }
+        // CloudFront対策: バックエンドは常に200を返すため、
+        // HTTPステータスチェックは行わず、レスポンスボディのerrorフィールドで判定
 
         // Check content type before parsing
         const contentType = response.headers.get('content-type')

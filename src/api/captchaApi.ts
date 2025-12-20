@@ -86,12 +86,8 @@ export async function getCaptchaImage(): Promise<CaptchaGenerateResponse> {
             body: JSON.stringify({}),
         })
 
-        if (!response.ok) {
-            throw new CaptchaApiError(
-                `Failed to get CAPTCHA image: ${response.status}`,
-                response.status
-            )
-        }
+        // CloudFront対策: バックエンドは常に200を返すため、
+        // HTTPステータスチェックは行わず、レスポンスボディのerrorフィールドで判定
 
         // Check content type before parsing
         const contentType = response.headers.get('content-type')
@@ -135,12 +131,8 @@ export async function verifyCaptcha(
             body: JSON.stringify(request),
         })
 
-        if (!response.ok) {
-            throw new CaptchaApiError(
-                `CAPTCHA verification failed: ${response.status}`,
-                response.status
-            )
-        }
+        // CloudFront対策: バックエンドは常に200を返すため、
+        // HTTPステータスチェックは行わず、レスポンスボディのerrorフィールドで判定
 
         // Check content type before parsing
         const contentType = response.headers.get('content-type')
