@@ -92,31 +92,31 @@ export const CalcOtpDisplay = ({
     return (
         <div
             data-testid="calc-otp-display"
-            className="w-full max-w-md mx-auto p-6"
+            className="w-full max-w-2xl mx-auto p-6"
         >
             {/* 問題表示エリア */}
-            <div className="mb-8 p-6 bg-white rounded-lg shadow-md">
-                <h2 className="text-lg font-semibold text-gray-700 mb-4 text-center">
+            <div className="mb-8 p-8 bg-white rounded-lg shadow-md">
+                <h2 className="text-lg font-semibold text-gray-700 mb-6 text-center">
                     次の問題を解いてください
                 </h2>
                 <div
                     ref={mathRef}
-                    className="text-xl text-center text-gray-800 min-h-[60px] flex items-center justify-center"
+                    className="text-xl text-center text-gray-800 min-h-[60px] flex items-center justify-center overflow-x-auto"
                     data-testid="problem-display"
                 />
                 {parsedProblem.instruction && (
-                    <p className="text-lg text-center text-gray-700 mt-4">
+                    <p className="text-lg text-center text-gray-700 mt-6">
                         {parsedProblem.instruction}
                     </p>
                 )}
             </div>
 
             {/* 回答入力フォーム */}
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4 max-w-md mx-auto">
                 <div>
                     <label
                         htmlFor="otp-answer"
-                        className="block text-sm font-medium text-gray-700 mb-2"
+                        className="block text-sm font-medium text-gray-700 mb-2 text-center"
                     >
                         6桁の答えを入力
                     </label>
