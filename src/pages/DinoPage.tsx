@@ -13,8 +13,9 @@ import { ObstacleManager } from '../components/dino/Obstacle'
 import { checkCollision } from '../components/dino/CollisionDetector'
 import { ScoreDisplay } from '../components/dino/ScoreDisplay'
 import { TARGET_SCORE, isTimeout, isTargetAchieved } from '../components/dino/scoreUtils'
-import { submitGameResultMock } from '../api/dinoApi'
+import { submitGameResult, startGame as startGameApi } from '../api/dinoApi'
 import type { GameResultResponse } from '../api/dinoApi'
+import { useSessionStore } from '../store/sessionStore'
 
 type GameState = 'ready' | 'playing' | 'gameover' | 'success' | 'submitting'
 
@@ -23,6 +24,8 @@ const CANVAS_HEIGHT = 300
 
 export function DinoPage() {
     const navigate = useNavigate()
+    const setStatus = useSessionStore((state) => state.setStatus)
+    const resetSession = useSessionStore((state) => state.reset)
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const dinoRef = useRef<Dinosaur | null>(null)
     const obstacleManagerRef = useRef<ObstacleManager | null>(null)
@@ -49,27 +52,47 @@ export function DinoPage() {
         obstacleManagerRef.current = new ObstacleManager(CANVAS_WIDTH)
     }, [])
 
+    // ゲーム開始時にバックエンドに通知（ユーザーステータスをstage1_dinoに昇格）
+    useEffect(() => {
+        const initGame = async () => {
+            try {
+                const response = await startGameApi()
+                if (response.error) {
+                    console.warn('Game start warning:', response.message)
+                } else {
+                    console.log('Game initialized:', response.message)
+                    setStatus('stage1_dino')
+                }
+            } catch (error) {
+                console.error('Failed to initialize game:', error)
+            }
+        }
+        initGame()
+    }, [setStatus])
+
     // API結果送信
-    const submitResult = useCallback(async (survived: boolean) => {
+    const submitResult = useCallback(async (cleared: boolean) => {
         setGameState('submitting')
         setApiError(null)
 
         try {
-            const response: GameResultResponse = await submitGameResultMock({
+            const response: GameResultResponse = await submitGameResult({
+                result: cleared ? 'clear' : 'gameover',
                 score: scoreRef.current,
-                survived,
             })
 
             setApiMessage(response.message)
 
             if (!response.error) {
-                // 成功: 次ステージへ遷移
+                // 成功: ステータスを registering に更新して次ステージへ遷移
+                setStatus('registering')
                 setGameState('success')
                 setTimeout(() => {
                     navigate(`/${response.next_stage}`)
                 }, 2000)
             } else {
-                // 失敗: リダイレクトカウントダウン開始
+                // 失敗: セッションをリセットしてリダイレクトカウントダウン開始
+                resetSession()
                 setGameState('gameover')
                 setRedirectCountdown(response.redirect_delay)
             }
@@ -77,7 +100,7 @@ export function DinoPage() {
             setApiError(error instanceof Error ? error.message : 'API送信に失敗しました')
             setGameState('gameover')
         }
-    }, [navigate])
+    }, [navigate, setStatus, resetSession])
 
     // リダイレクトカウントダウン
     useEffect(() => {
@@ -90,16 +113,16 @@ export function DinoPage() {
         return () => clearTimeout(timer)
     }, [redirectCountdown])
 
-    // カウントダウン終了時にリトライ画面を表示
+    // カウントダウン終了時に待機列ページへリダイレクト
     useEffect(() => {
         if (redirectCountdown === 0) {
             // setTimeoutで非同期にしてlintエラーを回避
             const timer = setTimeout(() => {
-                setRedirectCountdown(null)
+                navigate('/queue')
             }, 0)
             return () => clearTimeout(timer)
         }
-    }, [redirectCountdown])
+    }, [redirectCountdown, navigate])
 
     // ゲーム成功処理
     const handleSuccess = useCallback(() => {
@@ -217,24 +240,6 @@ export function DinoPage() {
         animationFrameRef.current = requestAnimationFrame(gameLoop)
     }, [gameLoop])
 
-    // リトライ
-    const retry = useCallback(() => {
-        if (dinoRef.current) {
-            dinoRef.current.reset()
-        }
-        if (obstacleManagerRef.current) {
-            obstacleManagerRef.current.reset()
-        }
-        scoreRef.current = 0
-        timerRef.current = 0
-        setGameState('ready')
-        setScore(0)
-        setTimer(0)
-        setIsTimeoutFail(false)
-        setApiMessage('')
-        setApiError(null)
-        setRedirectCountdown(null)
-    }, [])
 
     // ジャンプ処理
     const handleJump = useCallback(() => {
@@ -313,15 +318,16 @@ export function DinoPage() {
                     startGame()
                 } else if (gameState === 'playing') {
                     handleJump()
-                } else if ((gameState === 'gameover' || gameState === 'success') && redirectCountdown === null) {
-                    retry()
+                } else if (gameState === 'gameover' && redirectCountdown === null) {
+                    // ゲームオーバー時は待機列へ戻る
+                    navigate('/queue')
                 }
             }
         }
 
         window.addEventListener('keydown', handleKeyDown)
         return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [gameState, startGame, retry, handleJump, redirectCountdown])
+    }, [gameState, startGame, handleJump, redirectCountdown, navigate])
 
     return (
         <div
@@ -410,18 +416,18 @@ export function DinoPage() {
                         )}
                         {redirectCountdown !== null && redirectCountdown > 0 && (
                             <p className="text-yellow-400 text-sm mb-4">
-                                {redirectCountdown}秒後にリトライ可能...
+                                {redirectCountdown}秒後に待機列へ戻ります...
                             </p>
                         )}
                         <button
-                            onClick={retry}
+                            onClick={() => navigate('/queue')}
                             disabled={redirectCountdown !== null && redirectCountdown > 0}
                             className={`px-8 py-3 text-white font-bold rounded-lg transition-colors text-lg ${redirectCountdown !== null && redirectCountdown > 0
                                 ? 'bg-gray-600 cursor-not-allowed'
                                 : 'bg-violet-600 hover:bg-violet-700'
                                 }`}
                         >
-                            リトライ
+                            待機列へ戻る
                         </button>
                     </div>
                 )}

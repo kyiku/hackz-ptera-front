@@ -114,8 +114,8 @@ export function RegisterPhonePage() {
                     onClick={handleBackspace}
                     disabled={phoneDigits.length === 0}
                     className={`px-6 py-3 rounded-lg font-bold transition-all ${phoneDigits.length === 0
-                            ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
-                            : 'bg-gray-700 hover:bg-gray-600 text-white'
+                        ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                        : 'bg-gray-700 hover:bg-gray-600 text-white'
                         }`}
                 >
                     ← 1桁削除
@@ -124,8 +124,8 @@ export function RegisterPhonePage() {
                     onClick={handleClear}
                     disabled={phoneDigits.length === 0}
                     className={`px-6 py-3 rounded-lg font-bold transition-all ${phoneDigits.length === 0
-                            ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
-                            : 'bg-red-800 hover:bg-red-700 text-white'
+                        ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                        : 'bg-red-800 hover:bg-red-700 text-white'
                         }`}
                 >
                     全削除
@@ -134,8 +134,8 @@ export function RegisterPhonePage() {
                     onClick={handleComplete}
                     disabled={!isComplete}
                     className={`px-8 py-3 rounded-lg font-bold transition-all ${isComplete
-                            ? 'bg-green-600 hover:bg-green-500 text-white shadow-lg shadow-green-600/30'
-                            : 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                        ? 'bg-green-600 hover:bg-green-500 text-white shadow-lg shadow-green-600/30'
+                        : 'bg-gray-700 text-gray-500 cursor-not-allowed'
                         }`}
                 >
                     完了 ✓

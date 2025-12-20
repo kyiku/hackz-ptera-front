@@ -27,6 +27,8 @@ describe('BirthdayScrollInput', () => {
 
     beforeEach(() => {
         mockOnChange.mockClear()
+        // scrollTo をモック（jsdom では未実装のため）
+        Element.prototype.scrollTo = vi.fn()
     })
 
     describe('基本レンダリング', () => {

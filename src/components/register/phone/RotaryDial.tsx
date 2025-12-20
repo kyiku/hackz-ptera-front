@@ -80,6 +80,10 @@ export function RotaryDial({ onDigitComplete, disabled = false }: RotaryDialProp
         return Math.atan2(clientY - centerY, clientX - centerX) * (180 / Math.PI)
     }, [])
 
+    // ドラッグ中の累積回転量を追跡
+    const accumulatedRotationRef = useRef(0)
+    const lastAngleRef = useRef(0)
+
     // ドラッグ開始
     const handleDragStart = useCallback((clientX: number, clientY: number, digit: string, digitAngle: number) => {
         if (disabled || isReturning) return
@@ -91,7 +95,10 @@ export function RotaryDial({ onDigitComplete, disabled = false }: RotaryDialProp
         setRequiredRotation(required)
 
         // 現在のカーソル位置を基準角度として記録
-        startAngleRef.current = calculateAngle(clientX, clientY)
+        const startAngle = calculateAngle(clientX, clientY)
+        startAngleRef.current = startAngle
+        lastAngleRef.current = startAngle
+        accumulatedRotationRef.current = 0
     }, [disabled, isReturning, calculateAngle])
 
     // ドラッグ中 - カーソル位置に数字が追従
@@ -99,14 +106,20 @@ export function RotaryDial({ onDigitComplete, disabled = false }: RotaryDialProp
         if (!isDragging || !selectedDigit) return
 
         const currentAngle = calculateAngle(clientX, clientY)
-        let delta = currentAngle - startAngleRef.current
 
-        // 角度の正規化
+        // 前回の角度からの差分を計算
+        let delta = currentAngle - lastAngleRef.current
+
+        // 角度の正規化（-180 ~ 180）
         if (delta > 180) delta -= 360
         if (delta < -180) delta += 360
 
-        // 時計回り（正の回転）のみ許可
-        const newRotation = Math.max(0, Math.min(requiredRotation, delta))
+        // 累積回転量を更新（時計回りは正の値）
+        accumulatedRotationRef.current += delta
+        lastAngleRef.current = currentAngle
+
+        // 時計回り（正の回転）のみ許可し、必要回転量以内に制限
+        const newRotation = Math.max(0, Math.min(requiredRotation, accumulatedRotationRef.current))
         setRotation(newRotation)
     }, [isDragging, selectedDigit, requiredRotation, calculateAngle])
 
