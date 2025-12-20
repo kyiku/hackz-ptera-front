@@ -48,7 +48,10 @@ export const CaptchaInput = ({ onSuccess, onFinalFailure }: CaptchaInputProps) =
             const response = await getCaptchaImage()
 
             if (response.error) {
-                setMessage('CAPTCHA生成に失敗しました')
+                const errorMsg = 'message' in response ? response.message : 'CAPTCHA生成に失敗しました'
+                const errorCode = 'code' in response ? response.code : ''
+                console.error('CAPTCHA API error:', errorCode, errorMsg)
+                setMessage(errorMsg + (errorCode ? ' (' + errorCode + ')' : ''))
                 setMessageType('error')
                 return
             }
@@ -60,7 +63,8 @@ export const CaptchaInput = ({ onSuccess, onFinalFailure }: CaptchaInputProps) =
             setAttemptsRemaining(3)
         } catch (error) {
             console.error('CAPTCHA generation error:', error)
-            setMessage('CAPTCHA生成に失敗しました')
+            const errMsg = error instanceof Error ? error.message : 'CAPTCHA生成に失敗しました'
+            setMessage(errMsg)
             setMessageType('error')
         } finally {
             setIsLoading(false)

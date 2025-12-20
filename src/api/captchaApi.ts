@@ -9,12 +9,22 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 
 // --- 型定義 ---
 
-// CAPTCHA生成レスポンス
-export interface CaptchaGenerateResponse {
+// CAPTCHA生成レスポンス（成功）
+export interface CaptchaGenerateSuccessResponse {
     error: false
     image_url: string
     target_image_url: string
 }
+
+// CAPTCHA生成レスポンス（エラー）
+export interface CaptchaGenerateErrorResponse {
+    error: true
+    message: string
+    code?: string
+}
+
+// CAPTCHA生成レスポンス
+export type CaptchaGenerateResponse = CaptchaGenerateSuccessResponse | CaptchaGenerateErrorResponse
 
 // CAPTCHA検証リクエスト
 export interface CaptchaVerifyRequest {
@@ -167,7 +177,7 @@ let mockAttemptsRemaining = 3
 /**
  * CAPTCHA画像取得（モック）
  */
-export async function getCaptchaImageMock(): Promise<CaptchaGenerateResponse> {
+export async function getCaptchaImageMock(): Promise<CaptchaGenerateSuccessResponse> {
     // 遅延をシミュレート
     await new Promise(resolve => setTimeout(resolve, 500))
 
