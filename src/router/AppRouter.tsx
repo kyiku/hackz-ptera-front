@@ -7,6 +7,13 @@ import QueuePage from '../pages/QueuePage'
 import DinoPage from '../pages/DinoPage'
 import CaptchaPage from '../pages/CaptchaPage'
 import RegisterPage from '../pages/RegisterPage'
+import RegisterNamePage from '../pages/RegisterNamePage'
+import RegisterBirthdayPage from '../pages/RegisterBirthdayPage'
+import RegisterPhonePage from '../pages/RegisterPhonePage'
+import RegisterAddressPage from '../pages/RegisterAddressPage'
+import RegisterEmailPage from '../pages/RegisterEmailPage'
+import RegisterTermsPage from '../pages/RegisterTermsPage'
+import RegisterPasswordPage from '../pages/RegisterPasswordPage'
 import OtpPage from '../pages/OtpPage'
 import CompletePage from '../pages/CompletePage'
 import NotFoundPage from '../pages/NotFoundPage'
@@ -54,10 +61,74 @@ export const AppRoutes = () => {
                 }
             />
             <Route
+                path="/register/name"
+                element={
+                    <ProtectedRoute>
+                        <RegisterNamePage />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/register/birthday"
+                element={
+                    <ProtectedRoute>
+                        <RegisterBirthdayPage />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/register/phone"
+                element={
+                    <ProtectedRoute>
+                        <RegisterPhonePage />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/register/address"
+                element={
+                    <ProtectedRoute>
+                        <RegisterAddressPage />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/register/email"
+                element={
+                    <ProtectedRoute>
+                        <RegisterEmailPage />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/register/terms"
+                element={
+                    <ProtectedRoute>
+                        <RegisterTermsPage />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/register/password"
+                element={
+                    <ProtectedRoute>
+                        <RegisterPasswordPage />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
                 path="/otp"
                 element={
                     <ProtectedRoute>
                         <OtpPage />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/register/complete"
+                element={
+                    <ProtectedRoute>
+                        <CompletePage />
                     </ProtectedRoute>
                 }
             />
