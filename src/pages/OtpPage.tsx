@@ -58,7 +58,7 @@ const OtpPage = () => {
                 // 成功 - 正解を表示して2秒後にリダイレクト
                 setIsSuccess(true)
                 setTimeout(() => {
-                    navigate('/register')
+                    navigate(`/register?token=${response.register_token}`)
                 }, 2000)
             } else if (isVerifyRetryableFailure(response)) {
                 // リトライ可能な失敗

@@ -38,6 +38,7 @@ export interface OtpVerifyRequest {
 export interface OtpVerifySuccessResponse {
     error: false
     message: string
+    register_token: string
 }
 
 /**
@@ -240,6 +241,7 @@ export async function verifyOtpMock(
         return {
             error: false,
             message: '正解です！登録が完了しました',
+            register_token: crypto.randomUUID(),
         }
     }
 
