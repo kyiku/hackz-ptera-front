@@ -63,6 +63,14 @@ export interface UseBlinkDetectorReturn {
     currentEAR: number
     /** 瞬き中かどうか */
     isBlinking: boolean
+    /** キャリブレーション中かどうか */
+    isCalibrating: boolean
+    /** キャリブレーション開始 */
+    startCalibration: () => void
+    /** キャリブレーション状態 */
+    calibrationStatus: string
+    /** 現在の閾値 */
+    currentThreshold: number
 }
 
 // 目のランドマークインデックス（MediaPipe Face Mesh）
@@ -126,12 +134,26 @@ export const useBlinkDetector = ({
     const [error, setError] = useState<string | null>(null)
     const [currentEAR, setCurrentEAR] = useState(0.3)
     const [isBlinking, setIsBlinking] = useState(false)
+    const [isCalibrating, setIsCalibrating] = useState(false)
+    const [calibrationStatus, setCalibrationStatus] = useState('')
+    const [dynamicThreshold, setDynamicThreshold] = useState(earThreshold)
 
     const faceLandmarkerRef = useRef<FaceLandmarker | null>(null)
     const animationFrameRef = useRef<number | null>(null)
     const blinkStartTimeRef = useRef<number | null>(null)
     const lastBlinkTimeRef = useRef<number>(0)
     const detectBlinksRef = useRef<(() => void) | null>(null)
+
+    // キャリブレーション用
+    const calibrationDataRef = useRef<{
+        openEyes: number[]  // 目を開けている時のEAR値
+        closedEyes: number[]  // 瞬き時のEAR値
+        blinkCount: number
+    }>({
+        openEyes: [],
+        closedEyes: [],
+        blinkCount: 0,
+    })
 
     // 初期化時にlastBlinkTimeを設定
     useEffect(() => {
@@ -199,8 +221,66 @@ export const useBlinkDetector = ({
 
                     const now = Date.now()
 
-                    // 瞬き検出: EARが閾値以下
-                    if (avgEAR < earThreshold) {
+                    // キャリブレーションモード
+                    if (isCalibrating) {
+                        const calibData = calibrationDataRef.current
+
+                        // 瞬き検出: EARが動的閾値以下
+                        if (avgEAR < dynamicThreshold * 0.9) {  // 少し低めで検出
+                            if (!blinkStartTimeRef.current) {
+                                blinkStartTimeRef.current = now
+                                setIsBlinking(true)
+
+                                // 瞬き時のEAR値を記録
+                                calibData.closedEyes.push(avgEAR)
+                                if (debug) console.log(`🎯 キャリブレーション: 瞬き検出 EAR=${avgEAR.toFixed(3)}`)
+                            }
+                        } else {
+                            // 目が開いている
+                            if (blinkStartTimeRef.current) {
+                                // 瞬き終了
+                                setIsBlinking(false)
+                                calibData.blinkCount++
+                                setCalibrationStatus(`瞬きを検出しました (${calibData.blinkCount}/5)`)
+
+                                if (debug) console.log(`✅ 瞬き ${calibData.blinkCount}/5`)
+
+                                // 5回瞬きしたら閾値を計算
+                                if (calibData.blinkCount >= 5) {
+                                    const avgOpen = calibData.openEyes.reduce((a, b) => a + b, 0) / calibData.openEyes.length
+                                    const avgClosed = calibData.closedEyes.reduce((a, b) => a + b, 0) / calibData.closedEyes.length
+                                    const newThreshold = (avgOpen + avgClosed) / 2
+
+                                    setDynamicThreshold(newThreshold)
+                                    setIsCalibrating(false)
+                                    setCalibrationStatus(`完了！閾値: ${newThreshold.toFixed(3)}`)
+
+                                    if (debug) {
+                                        console.log(`🎉 キャリブレーション完了!`)
+                                        console.log(`  目を開けている平均: ${avgOpen.toFixed(3)}`)
+                                        console.log(`  瞬き時の平均: ${avgClosed.toFixed(3)}`)
+                                        console.log(`  新しい閾値: ${newThreshold.toFixed(3)}`)
+                                    }
+                                }
+
+                                blinkStartTimeRef.current = null
+                            } else {
+                                // 目を開けている時のEAR値を記録
+                                if (calibData.openEyes.length < 50) {  // 最大50サンプル
+                                    calibData.openEyes.push(avgEAR)
+                                }
+                            }
+                        }
+
+                        if (detectBlinksRef.current) {
+                            animationFrameRef.current = requestAnimationFrame(detectBlinksRef.current)
+                        }
+                        return
+                    }
+
+                    // 通常の瞬き検出モード（キャリブレーション後）
+                    // 瞬き検出: EARが動的閾値以下
+                    if (avgEAR < dynamicThreshold) {
                         if (!blinkStartTimeRef.current) {
                             // 瞬き開始
                             blinkStartTimeRef.current = now
@@ -291,6 +371,22 @@ export const useBlinkDetector = ({
     }, [])
 
     /**
+     * キャリブレーション開始
+     */
+    const startCalibration = useCallback(() => {
+        // リセット
+        calibrationDataRef.current = {
+            openEyes: [],
+            closedEyes: [],
+            blinkCount: 0,
+        }
+        setIsCalibrating(true)
+        setCalibrationStatus('5回瞬きをしてください...')
+
+        if (debug) console.log('🎯 キャリブレーション開始')
+    }, [debug])
+
+    /**
      * クリーンアップ
      */
     useEffect(() => {
@@ -310,6 +406,10 @@ export const useBlinkDetector = ({
         stop,
         currentEAR,
         isBlinking,
+        isCalibrating,
+        startCalibration,
+        calibrationStatus,
+        currentThreshold: dynamicThreshold,
     }
 }
 
